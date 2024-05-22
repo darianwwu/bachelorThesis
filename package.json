@@ -1,0 +1,26 @@
+{
+  "name": "bachelorthesis",
+  "version": "1.0.0",
+  "description": "semi-autmatic detection of fake satellite imagery in social media by comparison with reference data",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node ./bin/www"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/darianwwu/bachelorThesis.git"
+  },
+  "keywords": [
+    "satellite",
+    "imagery",
+    "social",
+    "media"
+  ],
+  "author": "Darian Elias Weiss",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/darianwwu/bachelorThesis/issues"
+  },
+  "homepage": "https://github.com/darianwwu/bachelorThesis#readme"
+}
