@@ -5,7 +5,7 @@
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node ./bin/www"
+    "start": "nodemon ./bin/www"
   },
   "repository": {
     "type": "git",
@@ -22,5 +22,18 @@
   "bugs": {
     "url": "https://github.com/darianwwu/bachelorThesis/issues"
   },
-  "homepage": "https://github.com/darianwwu/bachelorThesis#readme"
+  "homepage": "https://github.com/darianwwu/bachelorThesis#readme",
+  "dependencies": {
+    "bootstrap": "^5.2.2",
+    "cookie-parser": "~1.4.4",
+    "debug": "~2.6.9",
+    "express": "^4.18.2",
+    "http-errors": "~1.6.3",
+    "leaflet": "^1.9.2",
+    "mongodb": "^4.12.1",
+    "morgan": "~1.9.1",
+    "nodemon": "^2.0.20",
+    "pug": "2.0.0-beta11",
+    "serialport": "^10.5.0"
+  }
 }
