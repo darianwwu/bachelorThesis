@@ -1,6 +1,37 @@
 extends layout
-
 block content
   h1 Semi-automatische Erkennung manipulierter Satellitenbilder in sozialen Medien durch Vergleich mit Referenzdaten
   p Input: Satellitenbild, Referenzdaten Output: Manipulationserkennung
-  
+  .row
+  #map(style='width: 1000px; height: 700px')
+   script(src='http://cdn.leafletjs.com/leaflet-0.7/leaflet.js')
+   script.
+    var map = L.map('map').setView([-41.2858, 174.78682], 14);
+    mapLink =
+    '<a href="http://www.esri.com/">Esri</a>';
+    wholink =
+    'i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community';
+    L.tileLayer(
+    'http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    attribution: '&copy; '+mapLink+', '+wholink,
+    maxZoom: 18,
+    }).addTo(map);
+
+    var topoLayer = L.tileLayer(
+    'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+    attribution: 'Map data: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> contributors',
+    maxZoom: 17,
+    });
+
+    var baseMaps = {
+    "Satellite": L.tileLayer(
+    'http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    attribution: '&copy; '+mapLink+', '+wholink,
+    maxZoom: 18,
+    }),
+    "Topographic": topoLayer
+    };
+
+    L.control.layers(baseMaps).addTo(map);
+
+    
