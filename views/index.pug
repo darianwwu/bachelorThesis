@@ -1,4 +1,5 @@
 extends layout
+
 block content
   h1 Semi-automatische Erkennung manipulierter Satellitenbilder in sozialen Medien durch Vergleich mit Referenzdaten
   p Input: Satellitenbild, Referenzdaten Output: Manipulationserkennung
@@ -6,42 +7,11 @@ block content
     .row
       .col-md-6
         .image-container
+          input#locationInput(type='text' placeholder='Location')
+          button#locationInputApply Bestätigen
           input#imageUpload(type='file' accept='image/*')
           img#previewImage(src='#' alt='Preview Image' style='width: 100%;')
       .col-md-6
         #map(style='width: 100%; height: 700px')
-          script(src='http://cdn.leafletjs.com/leaflet-0.7/leaflet.js')
-          script.
-            var map = L.map('map').setView([-41.2858, 174.78682], 14);
-            var satelliteLayer = L.tileLayer(
-              'http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-              attribution: '&copy; <a href="http://www.esri.com/">Esri</a>, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
-              maxZoom: 18,
-            }).addTo(map);
 
-            var labelLayer = L.tileLayer('https://tiles.stadiamaps.com/tiles/stamen_toner_labels/{z}/{x}/{y}.png', {
-              minZoom: 0,
-              maxZoom: 20,
-              attribution: '&copy; <a href="https://www.stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://www.stamen.com/" target="_blank">Stamen Design</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-              ext: 'png'
-            });
-
-            var baseMaps = {
-              "OpenStreetMap": L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 19,
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              }),
-              "Satellite": satelliteLayer
-            };
-
-            var overlayMaps = {
-              "Labels": labelLayer
-            };
-
-            // Adding the Satellite layer with labels by default
-            satelliteLayer.addTo(map);
-            labelLayer.addTo(map);
-
-            L.control.layers(baseMaps, overlayMaps).addTo(map);
-
-    script(src='/js/script.js')
+    // script(src='/js/script.js') <-- Dieses Skript wird im layout.pug eingebunden, daher hier nicht notwendig
