@@ -38,6 +38,6 @@ L.Control.geocoder().addTo(map);
 // Hinzufügen des Satellite Layers und des Label Layers
 satelliteLayer.addTo(map);
 labelLayer.addTo(map);
-
+L.simpleMapScreenshoter().addTo(map);
 // Hinzufügen der Layer Controls
 L.control.layers(baseMaps, overlayMaps).addTo(map);

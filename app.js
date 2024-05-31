@@ -1,81 +1,66 @@
-var createError = require("http-errors");
-var express = require("express");
-var path = require("path");
-var cookieParser = require("cookie-parser");
-var logger = require("morgan");
-
-var indexRouter = require("./routes/index");
-
-const app = express();
-const port = 4000;
-
-var bodyParser = require("body-parser");
-var jsonParser = bodyParser.json();
-app.use(jsonParser);
-
-// Mongo DB aufsetzen
+const createError = require("http-errors");
+const express = require("express");
+const path = require("path");
+const cookieParser = require("cookie-parser");
+const logger = require("morgan");
 const { MongoClient } = require("mongodb");
 
-const url = "mongodb://mongo:27017"; // connection URL
+const app = express();
+const port = process.env.PORT || 3000;
 
-const client = new MongoClient(url); // mongodb client
-
-const dbName = "satellitenbilder"; // database name
-
-const collectionName = "data"; // collection name
-
-// view engine setup
-app.set("views", path.join(__dirname, "views"));
-app.set("view engine", "pug");
-
+// Middleware
 app.use(logger("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
+
+// MongoDB Setup
+const url = "mongodb://mongo:27017";
+const client = new MongoClient(url, { useUnifiedTopology: true });
+const dbName = "satellitenbilder";
+const collectionName = "data";
+
+// View engine setup (Pug)
+app.set("views", path.join(__dirname, "views"));
+app.set("view engine", "pug");
+
+// Serve static files from the "public" directory
 app.use(express.static(path.join(__dirname, "public")));
 
+// Routes
+const indexRouter = require("./routes/index");
 app.use("/", indexRouter);
 
-// catch 404 and forward to error handler
-app.use(function (req, res, next) {
+// Endpoint to handle POST requests to add data
+app.post("/addData", async (req, res, next) => {
+  try {
+    await addData(req.body);
+    res.send("Data added successfully");
+  } catch (error) {
+    next(error);
+  } finally {
+    await client.close();
+  }
+});
+
+// Catch 404 and forward to error handler
+app.use(function(req, res, next) {
   next(createError(404));
 });
 
-// error handler
-app.use(function (err, req, res, next) {
-  // set locals, only providing error in development
+// Error handler
+app.use(function(err, req, res, next) {
   res.locals.message = err.message;
   res.locals.error = req.app.get("env") === "development" ? err : {};
 
-  // render the error page
+  // Render the error page
   res.status(err.status || 500);
   res.render("error");
 });
 
-// rendering static files
-app.use(express.static("public"));
-
-// Path definition for the fetch post
-app.post("/addData", function (req, res, next) {
-  addData(req.body)
-    .catch(console.error)
-    .finally(() => client.close());
+// Start the server
+app.listen(port, () => {
+  console.log(`Server is running on http://localhost:${port}`);
 });
-
-/**
- * Adds the data to the database
- * @param {Object} data
- */
-async function addData(data) {
-  await client.connect();
-  console.log("Connected successfully to server");
-
-  const db = client.db(dbName);
-
-  const collection = db.collection(collectionName);
-
-  await collection.insertOne(data); //function to insert one object
-  console.log("Data added successfuly");
-}
 
 module.exports = app;
