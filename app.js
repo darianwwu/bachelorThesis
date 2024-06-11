@@ -64,3 +64,18 @@ app.listen(port, () => {
 });
 
 module.exports = app;
+
+const { exec } = require('child_process');
+
+function processText(text) {
+    exec(`python process_text.py "${text}"`, (error, stdout, stderr) => {
+        if (error) {
+            console.error(`exec error: ${error}`);
+            return;
+        }
+        const result = JSON.parse(stdout);
+        console.log(result);
+    });
+}
+
+processText("Albert Einstein wurde am 14. März 1879 in Ulm, Deutschland geboren. Er war ein theoretischer Physiker, der für seine Theorie der Relativität berühmt ist. Einstein erhielt den Nobelpreis für Physik im Jahr 1921. Seine Arbeiten haben die moderne Physik maßgeblich beeinflusst.");
