@@ -41,3 +41,18 @@ labelLayer.addTo(map);
 L.simpleMapScreenshoter().addTo(map);
 // Hinzufügen der Layer Controls
 L.control.layers(baseMaps, overlayMaps).addTo(map);
+
+let coordinates = { lat: 37.7749, lng: -122.4194 };
+
+buttonLocation.addEventListener('click', () => {
+  fetch('http://localhost:5000/image', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(coordinates),
+  })
+  .then(response => response.json())
+  .then(data => console.log(data))
+  .catch((error) => console.error('Error:', error));
+});
