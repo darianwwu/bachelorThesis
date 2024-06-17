@@ -1,4 +1,3 @@
-// JavaScript-Code in der script.js
 const imageUpload = document.getElementById('imageUpload');
 const previewImage = document.getElementById('previewImage');
 const buttonLocation = document.getElementById('locationInputApply');
@@ -7,7 +6,7 @@ const feldLocation = document.getElementById('locationInput');
 // Initialisierung der Karte
 var map = L.map('map').setView([-41.2858, 174.78682], 14);
 
-// Hinzufügen der Tile Layer
+// Hinzufügen der Tile Layer, gefunden unter https://leaflet-extras.github.io/leaflet-providers/preview/
 var satelliteLayer = L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoiZHdlaXNzd3d1IiwiYSI6ImNsd3oxN2g5dDAyeGwycHF1Z29mYjV5enUifQ.7PQUPuJn6Nzz_tXGsIWdUw', {
 	minZoom: 0,
 	maxZoom: 20,
@@ -33,11 +32,12 @@ var overlayMaps = {
   "Labels": labelLayer
 };
 
+// Hinzufügen des Geocoders
 L.Control.geocoder().addTo(map);
-
 // Hinzufügen des Satellite Layers und des Label Layers
 satelliteLayer.addTo(map);
 labelLayer.addTo(map);
+// Hinzuügen des Screenshoters
 L.simpleMapScreenshoter().addTo(map);
 // Hinzufügen der Layer Controls
 L.control.layers(baseMaps, overlayMaps).addTo(map);
