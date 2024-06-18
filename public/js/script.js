@@ -1,10 +1,36 @@
 const imageUpload = document.getElementById('imageUpload');
 const previewImage = document.getElementById('previewImage');
 const buttonLocation = document.getElementById('locationInputApply');
-const feldLocation = document.getElementById('locationInput');
+const feldLocationLat = document.getElementById('locationInputLat');
+const feldLocationLon = document.getElementById('locationInputLon');
+const bildUeberKarteButton = document.getElementById('uebereinanderlegenButton');
+const bildTransaparenzRegler = document.getElementById('transparenzRegler');
+const bildDuplikatTransparenz = document.getElementById('transparentesOverlay');
 
 let coordinates = { lat: 37.7749, lng: -122.4194 }; //Test-Koordinaten, werden später durch dynamische Koordinaten ersetzt
+let ueberlagert = false;
+// Initialisierung der Karte
+var map = L.map('map').setView([-41.2858, 174.78682], 14);
 
+bildUeberKarteButton.addEventListener('click', () => {
+  if(ueberlagert == false) {
+    bildDuplikatTransparenz.src = previewImage.src;
+    previewImage.style.display = 'none';
+    bildDuplikatTransparenz.style.display = 'block';
+    bildDuplikatTransparenz.style.pointerEvents = 'none'; // Klicks gehen durch das Bild hindurch
+    ueberlagert = true;
+  }
+  else {
+    previewImage.style.display = 'block';
+    bildDuplikatTransparenz.style.display = 'none';
+    ueberlagert = false;
+  }
+});
+
+bildTransaparenzRegler.addEventListener('change', () => {
+  console.log(bildTransaparenzRegler.value);
+  bildDuplikatTransparenz.style.opacity = bildTransaparenzRegler.value /100;
+});
 /**
  * Event-Listener, ...
  */
@@ -38,8 +64,7 @@ imageUpload.addEventListener('change', function() {
     }
 });
 
-// Initialisierung der Karte
-var map = L.map('map').setView([-41.2858, 174.78682], 14);
+
 
 // Hinzufügen der Tile Layer, gefunden unter https://leaflet-extras.github.io/leaflet-providers/preview/
 var satelliteLayer = L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoiZHdlaXNzd3d1IiwiYSI6ImNsd3oxN2g5dDAyeGwycHF1Z29mYjV5enUifQ.7PQUPuJn6Nzz_tXGsIWdUw', {
@@ -76,3 +101,19 @@ labelLayer.addTo(map);
 L.simpleMapScreenshoter().addTo(map);
 // Hinzufügen der Layer Controls
 L.control.layers(baseMaps, overlayMaps).addTo(map);
+
+function koordinatenAuslesen() {
+  let coordinateLat;
+  let coordinateLon;
+  let combinedCoordinates;
+  if(feldLocationLat.value === "" || feldLocationLon.value === "") {
+    alert("Bitte geben Sie gültige Koordinaten ein.");
+    return;
+  }
+  else {
+  coordinateLat = feldLocationLat.value;
+  coordinateLon = feldLocationLon.value;
+  combinedCoordinates = { lat: coordinateLat, lng: coordinateLon };
+  return combinedCoordinates;
+  }
+}
