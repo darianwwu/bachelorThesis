@@ -3,6 +3,41 @@ const previewImage = document.getElementById('previewImage');
 const buttonLocation = document.getElementById('locationInputApply');
 const feldLocation = document.getElementById('locationInput');
 
+let coordinates = { lat: 37.7749, lng: -122.4194 }; //Test-Koordinaten, werden später durch dynamische Koordinaten ersetzt
+
+/**
+ * Event-Listener, ...
+ */
+buttonLocation.addEventListener('click', () => {
+  fetch('http://localhost:5000/image', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(coordinates),
+  })
+  .then(response => response.json())
+  .then(data => console.log(data))
+  .catch((error) => console.error('Error:', error));
+});
+
+/**
+ * Event-Listener, der dafür sorgt, dass das über den Datei-Upload ausgewählte Bild auf der Webseite angezeigt wird.
+ * Benötigte DOM-Elemente: imageUpload, previewImage
+ */
+imageUpload.addEventListener('change', function() {
+    const file = this.files[0];
+    const reader = new FileReader();
+
+    reader.addEventListener('load', function() {
+        previewImage.src = reader.result;
+    });
+
+    if (file) {
+        reader.readAsDataURL(file);
+    }
+});
+
 // Initialisierung der Karte
 var map = L.map('map').setView([-41.2858, 174.78682], 14);
 
@@ -41,18 +76,3 @@ labelLayer.addTo(map);
 L.simpleMapScreenshoter().addTo(map);
 // Hinzufügen der Layer Controls
 L.control.layers(baseMaps, overlayMaps).addTo(map);
-
-let coordinates = { lat: 37.7749, lng: -122.4194 };
-
-buttonLocation.addEventListener('click', () => {
-  fetch('http://localhost:5000/image', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(coordinates),
-  })
-  .then(response => response.json())
-  .then(data => console.log(data))
-  .catch((error) => console.error('Error:', error));
-});
