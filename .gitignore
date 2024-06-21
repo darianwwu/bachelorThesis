@@ -2,3 +2,5 @@ node_modules/
 public/apiKeys.js
 hilfsdateienmodellerstellung/
 venv/
+public/tifs
+__pycache__

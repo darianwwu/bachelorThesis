@@ -6,8 +6,9 @@ const feldLocationLon = document.getElementById('locationInputLon');
 const bildUeberKarteButton = document.getElementById('uebereinanderlegenButton');
 const bildTransaparenzRegler = document.getElementById('transparenzRegler');
 const bildDuplikatTransparenz = document.getElementById('transparentesOverlay');
+const tifanzeige = document.getElementById('my-img');
 
-let coordinates = { lat: 37.7749, lng: -122.4194 }; //Test-Koordinaten, werden später durch dynamische Koordinaten ersetzt
+let coordinates = { lat: 52.96251, lng: 17.625188 }; //Test-Koordinaten, werden später durch dynamische Koordinaten ersetzt
 let ueberlagert = false;
 // Initialisierung der Karte
 var map = L.map('map').setView([-41.2858, 174.78682], 14);
@@ -42,10 +43,16 @@ buttonLocation.addEventListener('click', () => {
     },
     body: JSON.stringify(coordinates),
   })
-  .then(response => response.json())
-  .then(data => console.log(data))
+  .then(response => response.blob())
+  .then(blob => {
+    const url = URL.createObjectURL(blob);
+    const tifanzeige = document.getElementById('my-img');
+    tifanzeige.src = url;
+    console.log(blob);
+  })
   .catch((error) => console.error('Error:', error));
 });
+
 
 /**
  * Event-Listener, der dafür sorgt, dass das über den Datei-Upload ausgewählte Bild auf der Webseite angezeigt wird.
