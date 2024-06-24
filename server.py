@@ -1,4 +1,4 @@
-from flask import Flask, request, send_file
+from flask import Flask, request, send_file, jsonify
 from flask_cors import CORS
 from osgeo import gdal
 import ee
@@ -8,6 +8,8 @@ import requests
 import zipfile
 import subprocess
 import time
+import spacy
+import geocoder
 from google.oauth2.service_account import Credentials
 
 app = Flask(__name__)
@@ -16,12 +18,16 @@ CORS(app)
 # Pfad zur JSON-Datei mit Key
 key_file = './credentials/ee-heinich04-805b2e12705e.json'
 scopes = ['https://www.googleapis.com/auth/earthengine']
+#api_key = 'AIzaSyB5OacCI7Nt76RIUn0qeyoGMKhFBdEWUaU'
 
 # Authentifizierung mit JWT
 credentials = Credentials.from_service_account_file(key_file, scopes=scopes)
 
 # Earth Engine initialisieren
 ee.Initialize(credentials)
+
+# Trainiertes Modell laden
+nlp = spacy.load(r"C:\Users\User\Documents\GitHub\bachelorThesis\trainiertesmodell")
 
 @app.route('/')
 def hello_world():
@@ -33,6 +39,60 @@ def get_metadata():
     image = ee.Image('LANDSAT/LC08/C01/T1/LC08_044034_20140318')
     info = image.getInfo()
     return info
+
+def geocode_address(address):
+    base_url = "https://nominatim.openstreetmap.org/search"
+    params = {
+        'q': address,
+        'format': 'json'
+    }
+    headers = {
+        'User-Agent': 'Bachelor Thesis localhost (dweiss1@uni-muenster.de)'
+    }
+    response = requests.get(base_url, params=params, headers=headers)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return {}
+
+@app.route('/geocode', methods=['POST'])
+def geocode():
+    try:
+        data = request.get_json()
+        text = data['text']
+        print('text geocode:', text)
+        result = geocode_address(text)
+        if result:
+            # Nominatim gibt eine Liste von Ergebnissen zurück; wir nehmen das erste
+            first_result = result[0]
+            coords = {
+                'lat': first_result['lat'],
+                'lon': first_result['lon']
+            }
+            return jsonify({'coords': coords})
+        else:
+            return jsonify({'error': 'Keine Ergebnisse gefunden'}), 404
+    except Exception as e:
+        app.logger.exception(e)
+        return str(e), 500
+
+@app.route('/classify', methods=['POST'])
+def classify_text():
+    try:
+        # Text aus der Anfrage abrufen
+        data = request.get_json()
+        text = data['text']
+        print('text classify:', text)
+        # Text mit dem Modell verarbeiten
+        doc = nlp(text)
+
+        # Entitäten extrahieren
+        entities = [(ent.start_char, ent.end_char, ent.label_) for ent in doc.ents]
+        print(entities)
+        return {'entities': entities}
+    except Exception as e:
+        app.logger.exception(e)
+        return str(e), 500
 
 #Hauptroute, die in script.js mit Koordinaten aufgerufen wird und ein TIF und ein PNG der entsprechenden Region erstellt
 @app.route('/image', methods=['POST'])
@@ -128,7 +188,7 @@ def get_image():
         gdal_translate = 'C:\\Program Files\\GDAL\\gdal_translate.exe'
         input_file_new = 'C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\merged.tif'
 
-        #Basis-Output-Dateiname
+        # Basis-Output-Dateiname
         output_file_base = 'C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\mergedtif.png'
 
         # Überprüfen, ob die Datei bereits existiert
@@ -157,7 +217,7 @@ def get_image():
             print("Fehlerausgabe:", e.stderr.decode())
             raise
 
-        #Nicht mehr benötigte Dateien löschen
+        # Nicht mehr benötigte Dateien löschen
         os.remove(zip_file_name)
         os.remove('C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\B4.tif')
         os.remove('C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\B3.tif')

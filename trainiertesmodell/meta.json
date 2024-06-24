@@ -1,5 +1,5 @@
 {
-  "lang":null,
+  "lang":"de",
   "name":"pipeline",
   "version":"0.0.0",
   "spacy_version":">=3.7.5,<3.8.0",
@@ -149,7 +149,6 @@
       "STADT",
       "STATE",
       "TIME",
-      "VIERTEL",
       "WORK_OF_ART"
     ],
     "morphologizer":[

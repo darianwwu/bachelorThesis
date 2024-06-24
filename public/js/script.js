@@ -7,11 +7,74 @@ const bildUeberKarteButton = document.getElementById('uebereinanderlegenButton')
 const bildTransaparenzRegler = document.getElementById('transparenzRegler');
 const bildDuplikatTransparenz = document.getElementById('transparentesOverlay');
 const tifanzeige = document.getElementById('my-img');
+const textNLPButton = document.getElementById('textInputApply');
 
 let coordinates = { lat: 52.96251, lng: 17.625188 }; //Test-Koordinaten, werden später durch dynamische Koordinaten ersetzt
+let inputtext = "Das Atomium in Brüssel Belgien ist ein sehr interessantes Bauwerk, hier its ien Bild davon.";
 let ueberlagert = false;
+let entitaetenarray = [];
+
 // Initialisierung der Karte
 var map = L.map('map').setView([-41.2858, 174.78682], 14);
+
+textNLPButton.addEventListener('click', () => {
+  fetch('http://localhost:5000/classify', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      text: inputtext
+    }),
+  })
+  .then(response => response.json())
+  .then(data => {
+    // Extrahiere und formatiere die Entitäten basierend auf den Indizes und Labels in `data`
+    const entities = data.entities.map(([start, end, label]) => {
+      // Extrahiere den Text der Entität basierend auf den Start- und Endindizes
+      const entityText = inputtext.slice(start, end);
+      // Erstelle ein Tupel aus dem Text der Entität und dem Label
+      return { text: entityText, label: label };
+    });
+  
+    // Finde POI, STADT, und LAND in den Entitäten
+    const poi = entities.find(entity => entity.label === 'POI');
+    const stadt = entities.find(entity => entity.label === 'STADT');
+    const land = entities.find(entity => entity.label === 'LAND');
+  
+    // Zusammenstellen des Textes basierend auf den verfügbaren Informationen
+    let textForGeocode = '';
+    //let testtextGeoCode = 'Atomium, Brüssel';
+    if (poi) textForGeocode += poi.text;
+    if (stadt) textForGeocode += (textForGeocode ? ', ' : '') + stadt.text;
+    if (!poi && !stadt && land) textForGeocode = land.text; // Nur LAND, wenn weder POI noch STADT vorhanden sind
+
+    // Entfernen der Artikel
+    textForGeocode = removeArticles(textForGeocode);
+
+    // Logge den zusammengestellten Text
+    console.log('Text for Geocode:', textForGeocode);
+  
+    // Führe die POST-Anfrage mit dem zusammengestellten Text aus
+    return fetch('http://localhost:5000/geocode', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        text: textForGeocode
+      }),
+    });
+  })
+  .then(response => response.json())
+  .then(data => {
+    // Verarbeite die Antwort der /geocode Route
+    console.log('Geocode Data:', data);
+  })
+  .catch((error) => {
+    console.error('Error:', error);
+  });
+});
 
 bildUeberKarteButton.addEventListener('click', () => {
   if(ueberlagert == false) {
@@ -123,4 +186,14 @@ function koordinatenAuslesen() {
   combinedCoordinates = { lat: coordinateLat, lng: coordinateLon };
   return combinedCoordinates;
   }
+}
+
+function removeArticles(text) {
+  const articles = ["der ", "die ", "das ", "ein ", "eine ", "eines ", "einer ", "einem ", "den ", "dem ", "des ", "the ", 
+                    "Der ", "Die ", "Das ", "Ein ", "Eine ", "Eines ", "Einer ", "Einem ", "Den ", "Dem ", "Des ", "The "];
+  articles.forEach(article => {
+      const regex = new RegExp('\\b' + article, 'gi'); // Word boundary to match articles only at word start
+      text = text.replace(regex, '');
+  });
+  return text;
 }
