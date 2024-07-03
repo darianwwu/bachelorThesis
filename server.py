@@ -2,7 +2,11 @@ from flask import Flask, request, send_file, jsonify
 from flask_cors import CORS
 from osgeo import gdal
 from skimage import io, filters, feature
+from google.oauth2.service_account import Credentials
+from PIL import Image, ImageChops, ImageEnhance
+from collections import Counter
 import matplotlib.pyplot as plt
+import numpy as np
 import cv2
 import ee
 import os
@@ -14,10 +18,6 @@ import time
 import spacy
 import geocoder
 import tweepy
-from google.oauth2.service_account import Credentials
-from PIL import Image, ImageChops, ImageEnhance
-import numpy as np
-from collections import Counter
 
 app = Flask(__name__)
 CORS(app)
@@ -27,14 +27,13 @@ key_file = './credentials/ee-heinich04-805b2e12705e.json'
 scopes = ['https://www.googleapis.com/auth/earthengine']
 #api_key = 'AIzaSyB5OacCI7Nt76RIUn0qeyoGMKhFBdEWUaU'
 
-twitter_api_key = '4TzCQMeLfu6kClXdUEwlhlWwd'
-twitter_api_key_secret = 'QlpUT15BywcD0PjQigRquuKSnZMJy64rHm0F8u1u56hl6WMvht'
-twitter_bearer_token = 'AAAAAAAAAAAAAAAAAAAAAEYWugEAAAAATZ5pNTl0naZyvuvMDQFb1bkvduU%3DlDs8iHTEy7AohL8jPb19f5p1p2VErEwu6KDZKF3Nk0D7zOOGx1'
-twitter_access_token = '1670759875285065729-S0ltHACDHfG3DD5aELrpkL2BeQd5ZN'
-twitter_access_token_secret = '30VTA2g7WGurD70QtxggpAWqkoLfSfmA1nt8Ee4q35zP0'
-
-auth = tweepy.OAuth1UserHandler(twitter_api_key, twitter_api_key_secret, twitter_access_token, twitter_access_token_secret)
-api = tweepy.API(auth)
+#twitter_api_key = '4TzCQMeLfu6kClXdUEwlhlWwd'
+#twitter_api_key_secret = 'QlpUT15BywcD0PjQigRquuKSnZMJy64rHm0F8u1u56hl6WMvht'
+#twitter_bearer_token = 'AAAAAAAAAAAAAAAAAAAAAEYWugEAAAAATZ5pNTl0naZyvuvMDQFb1bkvduU%3DlDs8iHTEy7AohL8jPb19f5p1p2VErEwu6KDZKF3Nk0D7zOOGx1'
+#twitter_access_token = '1670759875285065729-S0ltHACDHfG3DD5aELrpkL2BeQd5ZN'
+#twitter_access_token_secret = '30VTA2g7WGurD70QtxggpAWqkoLfSfmA1nt8Ee4q35zP0'
+#auth = tweepy.OAuth1UserHandler(twitter_api_key, twitter_api_key_secret, twitter_access_token, twitter_access_token_secret)
+#api = tweepy.API(auth)
 
 # Authentifizierung mit JWT
 credentials = Credentials.from_service_account_file(key_file, scopes=scopes)
@@ -45,7 +44,7 @@ ee.Initialize(credentials)
 # Trainiertes Modell laden
 nlp = spacy.load(r"C:\Users\User\Documents\GitHub\bachelorThesis\trainiertesmodell")
 
-
+# Funktion zum Analysieren eines Tweets (nicht funktionsfähig, da kostenlose Twitter API nur Schreibrechte unterstützt )
 def tweet_analysieren():
     tweet_id = '1800815302608838722'
     tweet = api.get_status(tweet_id)
@@ -60,17 +59,7 @@ def tweet_analysieren():
 
 #tweet_analysieren()
 
-@app.route('/')
-def hello_world():
-    return 'Earth Engine initialized successfully.'
-
-@app.route('/metadata')
-def get_metadata():
-    # Abrufen der Metadaten eines Bildes (Beispielaufruf)
-    image = ee.Image('LANDSAT/LC08/C01/T1/LC08_044034_20140318')
-    info = image.getInfo()
-    return info
-
+# Funktion zum Geocoden von extrahierten Entitäten (Text -> Koodinaten)
 def geocode_address(address):
     base_url = "https://nominatim.openstreetmap.org/search"
     params = {
@@ -86,6 +75,39 @@ def geocode_address(address):
     else:
         return {}
 
+# Basis-Route
+@app.route('/')
+def hello_world():
+    return 'Earth Engine initialized successfully.'
+
+# Metadaten-Route
+@app.route('/metadata')
+def get_metadata():
+    # Abrufen der Metadaten eines Bildes (Beispielaufruf)
+    image = ee.Image('LANDSAT/LC08/C01/T1/LC08_044034_20140318')
+    info = image.getInfo()
+    return info
+
+# Route, die in script.js mit dem Text aus dem Social Media Post aufgerufen wird und die relevanten Entitäten für das Geocoding extrahiert
+@app.route('/classify', methods=['POST'])
+def classify_text():
+    try:
+        # Text aus der Anfrage abrufen
+        data = request.get_json()
+        text = data['text']
+        print('text classify:', text)
+        # Text mit dem Modell verarbeiten
+        doc = nlp(text)
+
+        # Entitäten extrahieren
+        entities = [(ent.start_char, ent.end_char, ent.label_) for ent in doc.ents]
+        print(entities)
+        return {'entities': entities}
+    except Exception as e:
+        app.logger.exception(e)
+        return str(e), 500
+
+# Route, die in script.js mit den extrahierten Entitäten aus dem Text aufgerufen wird und die entsprechenden Koordinaten zurückgibt (Geocoding)
 @app.route('/geocode', methods=['POST'])
 def geocode():
     try:
@@ -107,24 +129,7 @@ def geocode():
         app.logger.exception(e)
         return str(e), 500
 
-@app.route('/classify', methods=['POST'])
-def classify_text():
-    try:
-        # Text aus der Anfrage abrufen
-        data = request.get_json()
-        text = data['text']
-        print('text classify:', text)
-        # Text mit dem Modell verarbeiten
-        doc = nlp(text)
-
-        # Entitäten extrahieren
-        entities = [(ent.start_char, ent.end_char, ent.label_) for ent in doc.ents]
-        print(entities)
-        return {'entities': entities}
-    except Exception as e:
-        app.logger.exception(e)
-        return str(e), 500
-
+# Route, die in script.js mit Koordinaten des in der Leaflet Map gezeichneten Rechtecks aufgerufen wird und ein TIF und ein PNG der entsprechenden Region erstellt
 @app.route('/imagefrommap', methods=['POST'])
 def get_image_from_map():
     try:
@@ -259,7 +264,7 @@ def get_image_from_map():
         app.logger.exception(e)
         return str(e), 500
     
-#Hauptroute, die in script.js mit Koordinaten aufgerufen wird und ein TIF und ein PNG der entsprechenden Region erstellt
+#Route, die in script.js mit aus dem Text estrahierten Koordinaten aufgerufen wird und ein TIF und ein PNG der entsprechenden Region erstellt
 @app.route('/image', methods=['POST'])
 def get_image():
     try:

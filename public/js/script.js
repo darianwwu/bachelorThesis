@@ -1,18 +1,21 @@
-const imageUploadInput = document.getElementById('imageUploadInput');
-const socialMediaBild = document.getElementById('socialMediaBild');
-const bildUeberKarteButton = document.getElementById('uebereinanderlegenButton');
-const bildTransaparenzRegler = document.getElementById('transparenzRegler');
-const transparentesBildOverlay = document.getElementById('transparentesBildOverlay');
-const tifanzeige = document.getElementById('my-img');
-const textInputApplyButton = document.getElementById('textInputApplyButton');
-const kartenCoordsApplyButton = document.getElementById('kartenCoordsApplyButton');
-const mapUndBildOverlayContainer = document.getElementById('mapUndBildOverlayContainer');
-const textInput = document.getElementById('textInput');
+const imageUploadInput = document.getElementById('imageUploadInput'); // Input-Element für das hochladen eines Satellitenbildes von Social Media
+const socialMediaBild = document.getElementById('socialMediaBild'); // Bild-Element zum Anzeigen des hochgeladenen Satellitenbild von Social Media
+const bildUeberKarteButton = document.getElementById('uebereinanderlegenButton'); // Button zum Überlagern des Satellitenbildes von Social Media über die Karte
+const bildTransaparenzRegler = document.getElementById('transparenzRegler'); // Regler zum Einstellen der Transparenz des über die Karte gelegten Bildes
+const transparentesBildOverlay = document.getElementById('transparentesBildOverlay'); // Bild-Element zum Anzeigen des über die Karte gelegten Bildes
+const satellitenbildEarthEngine = document.getElementById('satellitenbildEarthEngine'); // Bild-Element zum Anzeigen des Satellitenbildes von Earth Engine
+const textInputApplyButton = document.getElementById('textInputApplyButton'); // Button zum Anwenden der NLP Analyse auf den eingegebenen Text und dem Erstellen eines Satellitenbilds an entsprechender Stelle
+const kartenCoordsApplyButton = document.getElementById('kartenCoordsApplyButton'); // Button zum Erstellen eines Satellitenbilds mit den Koordinaten des auf der Karte gezeichneten Rechtecks
+const mapUndBildOverlayContainer = document.getElementById('mapUndBildOverlayContainer'); // Container für die Karte und das (transparente) Bild Overlay
+const textInput = document.getElementById('textInput'); // Text-Input-Feld für die Eingabe des zu analysierenden Textes eines Social Media Posts
 
-let coordinates = { lat: 52.96251, lng: 17.625188 }; //Test-Koordinaten, werden später durch dynamische Koordinaten ersetzt
+let coordinates = {lat: 0, lng: 0};
 let mapcoordinates = {minLng: 0, minLat: 0, maxLng: 0, maxLat: 0};
 let ueberlagert = false;
 
+/**
+ * Event-Listener, der das in der Leaflet Map gezeichnete Rechteck ausliest und mit dessen Koordinaten ein Earth Engine Bild anzeigt, wenn der Button geklickt wird.
+ */
 kartenCoordsApplyButton.addEventListener('click', () => {
   fetch('http://localhost:5000/imagefrommap', {
     method: 'POST',
@@ -24,23 +27,17 @@ kartenCoordsApplyButton.addEventListener('click', () => {
   .then(response => response.blob())
   .then(blob => {
     const url = URL.createObjectURL(blob);
-    tifanzeige.src = url;
+    satellitenbildEarthEngine.src = url;
     mapUndBildOverlayContainer.style.display = 'none';
-    //console.log(blob);
-    //let durchschnittLat = (mapcoordinates.maxLat + mapcoordinates.minLat) /2;
-    //let durchschnittLng = (mapcoordinates.maxLng + mapcoordinates.minLng) /2;
-    //let differenceLat = mapcoordinates.maxLat - mapcoordinates.minLat;
-    //let differenceLng = mapcoordinates.maxLng - mapcoordinates.minLng;
     let eckenkoordinaten = L.latLngBounds(L.latLng(mapcoordinates.minLat, mapcoordinates.minLng), L.latLng(mapcoordinates.maxLat, mapcoordinates.maxLng));
     map.fitBounds(eckenkoordinaten);
-    //console.log("durchschnittLat: ",durchschnittLat, " durchschnittLng: ",durchschnittLng, " differenceLat: ",differenceLat, " differenceLng: ",differenceLng);
     drawnItems.clearLayers();
   })
   .catch((error) => console.error('Error:', error));
   });
 
 /**
- * Event-Listener, der die NLP Analyse des Textes mit Klicken auf den entsprechenden Button ausführt.
+ * Event-Listener, der den eingegebenen Text analysiert und an dem gefundenen Ort ein Earth Engine Bild anzeigt, wenn der Button geklickt wird.
  */
 textInputApplyButton.addEventListener('click', () => {
   fetch('http://localhost:5000/classify', {
@@ -98,7 +95,7 @@ textInputApplyButton.addEventListener('click', () => {
   .then(response => response.blob())
   .then(blob => {
     const url = URL.createObjectURL(blob);
-    tifanzeige.src = url;
+    satellitenbildEarthEngine.src = url;
     mapUndBildOverlayContainer.style.display = 'none';
   })
   .catch((error) => {
@@ -107,7 +104,7 @@ textInputApplyButton.addEventListener('click', () => {
 });
 
 /**
- * Event-Listener, der das Bild über die Karte legt, wenn der Button geklickt wird.
+ * Event-Listener, der das Social Media Bild über die Karte legt, wenn der Button geklickt wird.
  */
 bildUeberKarteButton.addEventListener('click', () => {
   if(ueberlagert == false) {
@@ -125,38 +122,14 @@ bildUeberKarteButton.addEventListener('click', () => {
 });
 
 /**
- * Event-Listener, der die Transparenz des über die Karte gelegten Bildes ändert.
+ * Event-Listener, der die Transparenz des über die Karte gelegten Bildes ändert, wenn der Regler bewegt wird.
  */
 bildTransaparenzRegler.addEventListener('change', () => {
-  //console.log(bildTransaparenzRegler.value);
   transparentesBildOverlay.style.opacity = bildTransaparenzRegler.value /100;
 });
-/**
- * Event-Listener, der die Koordinaten an den python Server schickt und ein Earth Engine Bild erstellt und anzeigt.
- */
-/** 
-buttonLocation.addEventListener('click', () => {
-  fetch('http://localhost:5000/image', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(coordinates),
-  })
-  .then(response => response.blob())
-  .then(blob => {
-    const url = URL.createObjectURL(blob);
-    tifanzeige.src = url;
-    mapundoverlay.style.display = 'none';
-    //console.log(blob);
-  })
-  .catch((error) => console.error('Error:', error));
-});
-*/
 
 /**
  * Event-Listener, der dafür sorgt, dass das über den Datei-Upload ausgewählte Bild auf der Webseite angezeigt wird.
- * Benötigte DOM-Elemente: imageUploadInput, socialMediaBild
  */
 imageUploadInput.addEventListener('change', function() {
     const file = this.files[0];
@@ -235,12 +208,9 @@ map.on('draw:created', function (e) {
 
   if (type === 'rectangle') {
     var bounds = layer.getBounds();
-    //var topLeft = bounds.getNorthWest();
     var topRight = bounds.getNorthEast();
     var bottomLeft = bounds.getSouthWest();
-    //var bottomRight = bounds.getSouthEast();
     mapcoordinates = {minLng: bottomLeft.lng, minLat: bottomLeft.lat, maxLng: topRight.lng, maxLat: topRight.lat};
-    //console.log(mapcoordinates);
   }
 });
 
@@ -273,7 +243,7 @@ function removeArticles(text) {
   const articles = ["der ", "die ", "das ", "ein ", "eine ", "eines ", "einer ", "einem ", "den ", "dem ", "des ", "the ", 
                     "Der ", "Die ", "Das ", "Ein ", "Eine ", "Eines ", "Einer ", "Einem ", "Den ", "Dem ", "Des ", "The "];
   articles.forEach(article => {
-      const regex = new RegExp('\\b' + article, 'gi'); // Word boundary to match articles only at word start
+      const regex = new RegExp('\\b' + article, 'gi');
       text = text.replace(regex, '');
   });
   return text;

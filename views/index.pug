@@ -2,7 +2,6 @@ extends layout
 
 block content
   h1 Semi-automatische Erkennung manipulierter Satellitenbilder in sozialen Medien durch Vergleich mit Referenzdaten
-  p Input: Satellitenbild, Referenzdaten Output: Manipulationserkennung
   .row
     .row
       .col-md-6
@@ -15,7 +14,7 @@ block content
           button#textInputApplyButton Text nutzen
           button#kartenCoordsApplyButton Karten-Rechteck nutzen
       .col-md-6(style='position: relative;')
-        img#my-img(alt='Satellitenbild' style='width: 100%;')
+        img#satellitenbildEarthEngine(alt='Satellitenbild' style='width: 100%;')
         #mapUndBildOverlayContainer
           .map-container(style = 'position: relative; z-index: 1;')
             #map(style='width: 100%; height: 700px;')
