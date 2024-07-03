@@ -1,22 +1,23 @@
-const imageUpload = document.getElementById('imageUpload');
+const imageUploadInput = document.getElementById('imageUploadInput');
 const previewImage = document.getElementById('previewImage');
-const buttonLocation = document.getElementById('locationInputApply');
-const feldLocationLat = document.getElementById('locationInputLat');
-const feldLocationLon = document.getElementById('locationInputLon');
+//const buttonLocation = document.getElementById('locationInputApply');
+//const feldLocationLat = document.getElementById('locationInputLat');
+//const feldLocationLon = document.getElementById('locationInputLon');
 const bildUeberKarteButton = document.getElementById('uebereinanderlegenButton');
 const bildTransaparenzRegler = document.getElementById('transparenzRegler');
-const bildDuplikatTransparenz = document.getElementById('transparentesOverlay');
+const transparentesBildOverlay = document.getElementById('transparentesBildOverlay');
 const tifanzeige = document.getElementById('my-img');
-const textNLPButton = document.getElementById('textInputApply');
-const kartenCoordsButton = document.getElementById('kartenCoordsApply');
+const textInputApplyButton = document.getElementById('textInputApplyButton');
+const kartenCoordsApplyButton = document.getElementById('kartenCoordsApplyButton');
+const mapUndBildOverlayContainer = document.getElementById('mapUndBildOverlayContainer');
+const textInput = document.getElementById('textInput');
 
 let coordinates = { lat: 52.96251, lng: 17.625188 }; //Test-Koordinaten, werden später durch dynamische Koordinaten ersetzt
 let mapcoordinates = {minLng: 0, minLat: 0, maxLng: 0, maxLat: 0};
 let inputtext = "Das Atomium in Brüssel Belgien ist ein sehr interessantes Bauwerk, hier its ien Bild davon.";
 let ueberlagert = false;
-let entitaetenarray = [];
 
-kartenCoordsButton.addEventListener('click', () => {
+kartenCoordsApplyButton.addEventListener('click', () => {
   fetch('http://localhost:5000/imagefrommap', {
     method: 'POST',
     headers: {
@@ -27,9 +28,9 @@ kartenCoordsButton.addEventListener('click', () => {
   .then(response => response.blob())
   .then(blob => {
     const url = URL.createObjectURL(blob);
-    const tifanzeige = document.getElementById('my-img');
     tifanzeige.src = url;
-    console.log(blob);
+    mapUndBildOverlayContainer.style.display = 'none';
+    //console.log(blob);
     //let durchschnittLat = (mapcoordinates.maxLat + mapcoordinates.minLat) /2;
     //let durchschnittLng = (mapcoordinates.maxLng + mapcoordinates.minLng) /2;
     //let differenceLat = mapcoordinates.maxLat - mapcoordinates.minLat;
@@ -45,43 +46,35 @@ kartenCoordsButton.addEventListener('click', () => {
 /**
  * Event-Listener, der die NLP Analyse des Textes mit Klicken auf den entsprechenden Button ausführt.
  */
-textNLPButton.addEventListener('click', () => {
+textInputApplyButton.addEventListener('click', () => {
   fetch('http://localhost:5000/classify', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      text: inputtext
+      text: textInput.value
     }),
   })
   .then(response => response.json())
   .then(data => {
-    // Extrahiere und formatiere die Entitäten basierend auf den Indizes und Labels in `data`
     const entities = data.entities.map(([start, end, label]) => {
-      // Extrahiere den Text der Entität basierend auf den Start- und Endindizes
-      const entityText = inputtext.slice(start, end);
-      // Erstelle ein Tupel aus dem Text der Entität und dem Label
+      const entityText = textInput.value.slice(start, end);
       return { text: entityText, label: label };
     });
   
-    // Finde POI, STADT, und LAND in den Entitäten
     const poi = entities.find(entity => entity.label === 'POI');
     const stadt = entities.find(entity => entity.label === 'STADT');
     const land = entities.find(entity => entity.label === 'LAND');
   
-    // Zusammenstellen des Textes basierend auf den verfügbaren Informationen
     let textForGeocode = '';
-    //let testtextGeoCode = 'Atomium, Brüssel';
     if (poi) textForGeocode += poi.text;
     if (stadt) textForGeocode += (textForGeocode ? ', ' : '') + stadt.text;
-    if (!poi && !stadt && land) textForGeocode = land.text; // Nur LAND, wenn weder POI noch STADT vorhanden sind
+    if (!poi && !stadt && land) textForGeocode = land.text;
 
-    // Entfernen der Artikel
     textForGeocode = removeArticles(textForGeocode);
     console.log('Text for Geocode:', textForGeocode);
   
-    // Führe die POST-Anfrage mit dem zusammengestellten Text aus
     return fetch('http://localhost:5000/geocode', {
       method: 'POST',
       headers: {
@@ -94,11 +87,23 @@ textNLPButton.addEventListener('click', () => {
   })
   .then(response => response.json())
   .then(data => {
-    // Verarbeite die Antwort der /geocode Route
-    //console.log('Coordinates vor Änderung:', coordinates);
-    //console.log('Geocode Data:', data);
-    coordinates= { lat: parseFloat(data.coords.lat), lng: parseFloat(data.coords.lon) };
+    console.log('Coordinates vor Änderung:', coordinates);
+    coordinates = { lat: parseFloat(data.coords.lat), lng: parseFloat(data.coords.lon) };
     console.log('Coordinates nach Änderung:', coordinates);
+
+    return fetch('http://localhost:5000/image', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(coordinates),
+    });
+  })
+  .then(response => response.blob())
+  .then(blob => {
+    const url = URL.createObjectURL(blob);
+    tifanzeige.src = url;
+    mapUndBildOverlayContainer.style.display = 'none';
   })
   .catch((error) => {
     console.error('Error:', error);
@@ -110,15 +115,15 @@ textNLPButton.addEventListener('click', () => {
  */
 bildUeberKarteButton.addEventListener('click', () => {
   if(ueberlagert == false) {
-    bildDuplikatTransparenz.src = previewImage.src;
+    transparentesBildOverlay.src = previewImage.src;
     previewImage.style.display = 'none';
-    bildDuplikatTransparenz.style.display = 'block';
-    bildDuplikatTransparenz.style.pointerEvents = 'none'; // Klicks gehen durch das Bild hindurch
+    transparentesBildOverlay.style.display = 'block';
+    transparentesBildOverlay.style.pointerEvents = 'none'; // Klicks gehen durch das Bild hindurch
     ueberlagert = true;
   }
   else {
     previewImage.style.display = 'block';
-    bildDuplikatTransparenz.style.display = 'none';
+    transparentesBildOverlay.style.display = 'none';
     ueberlagert = false;
   }
 });
@@ -127,12 +132,13 @@ bildUeberKarteButton.addEventListener('click', () => {
  * Event-Listener, der die Transparenz des über die Karte gelegten Bildes ändert.
  */
 bildTransaparenzRegler.addEventListener('change', () => {
-  console.log(bildTransaparenzRegler.value);
-  bildDuplikatTransparenz.style.opacity = bildTransaparenzRegler.value /100;
+  //console.log(bildTransaparenzRegler.value);
+  transparentesBildOverlay.style.opacity = bildTransaparenzRegler.value /100;
 });
 /**
  * Event-Listener, der die Koordinaten an den python Server schickt und ein Earth Engine Bild erstellt und anzeigt.
  */
+/** 
 buttonLocation.addEventListener('click', () => {
   fetch('http://localhost:5000/image', {
     method: 'POST',
@@ -144,19 +150,19 @@ buttonLocation.addEventListener('click', () => {
   .then(response => response.blob())
   .then(blob => {
     const url = URL.createObjectURL(blob);
-    const tifanzeige = document.getElementById('my-img');
     tifanzeige.src = url;
-    console.log(blob);
+    mapundoverlay.style.display = 'none';
+    //console.log(blob);
   })
   .catch((error) => console.error('Error:', error));
 });
-
+*/
 
 /**
  * Event-Listener, der dafür sorgt, dass das über den Datei-Upload ausgewählte Bild auf der Webseite angezeigt wird.
- * Benötigte DOM-Elemente: imageUpload, previewImage
+ * Benötigte DOM-Elemente: imageUploadInput, previewImage
  */
-imageUpload.addEventListener('change', function() {
+imageUploadInput.addEventListener('change', function() {
     const file = this.files[0];
     const reader = new FileReader();
 
@@ -238,7 +244,7 @@ map.on('draw:created', function (e) {
     var bottomLeft = bounds.getSouthWest();
     //var bottomRight = bounds.getSouthEast();
     mapcoordinates = {minLng: bottomLeft.lng, minLat: bottomLeft.lat, maxLng: topRight.lng, maxLat: topRight.lat};
-    console.log(mapcoordinates);
+    //console.log(mapcoordinates);
   }
 });
 

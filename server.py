@@ -131,7 +131,7 @@ def get_image_from_map():
         # Koordinaten und Parameter festlegen
         mapcoordinates = request.get_json()
         coords = ee.Geometry.Rectangle([mapcoordinates['minLng'], mapcoordinates['minLat'], mapcoordinates['maxLng'], mapcoordinates['maxLat']])
-        maxCloudCover = 30
+        maxCloudCover = 10
         #bufferSize = 4000
         # Die Sentinel-2-Bildsammlung laden
         sentinel2 = (ee.ImageCollection('COPERNICUS/S2')
@@ -266,7 +266,7 @@ def get_image():
         # Koordinaten und Parameter festlegen
         coordinates = request.get_json()
         coords = ee.Geometry.Point([coordinates['lng'], coordinates['lat']])
-        maxCloudCover = 30
+        maxCloudCover = 10
         bufferSize = 4000
 
         # Die Sentinel-2-Bildsammlung laden

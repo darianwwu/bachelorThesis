@@ -7,20 +7,23 @@ block content
     .row
       .col-md-6
         .image-container
-          input#locationInputLat(type='text' placeholder='Location Lat')
-          input#locationInputLon(type='text' placeholder='Location Lon')
-          button#locationInputApply Bestätigen
-          input#imageUpload(type='file' accept='image/*')
+          //input#locationInputLat(type='text' placeholder='Location Lat')
+          //input#locationInputLon(type='text' placeholder='Location Lon')
+          //button#locationInputApply Bestätigen
+          input#imageUploadInput(type='file' accept='image/*')
           img#previewImage(src='#' alt='Preview Image' style='width: 100%;')
           button#uebereinanderlegenButton Bild auf Karte legen
           input#transparenzRegler(type='range' min='0' max='100' value='50')
-          button#textInputApply Text NLP
-          button#kartenCoordsApply Kartenkoordinaten nutzen
-          img#my-img(alt='Preview Image' style='width: 100%;')
-          input#linkInput(type='text' placeholder='Link')
+          input#textInput(type='text' placeholder='Hier Text eingeben...')
+          button#textInputApplyButton Text nutzen
+          button#kartenCoordsApplyButton Karten-Rechteck nutzen
+          
+          //input#linkInput(type='text' placeholder='Link')
 
       .col-md-6(style='position: relative;')
-        .map-container(style = 'position: relative; z-index: 1;')
-          #map(style='width: 100%; height: 700px;')
-        .overlay-container(style = 'position: absolute; z-index: 3; top: 0; left: 0; pointer-events: none;')  
-          img#transparentesOverlay(style='width: 100%; height: 700px; opacity: 0.5; display: none;')
+        img#my-img(alt='Preview Image' style='width: 100%;')
+        #mapUndBildOverlayContainer
+          .map-container(style = 'position: relative; z-index: 1;')
+            #map(style='width: 100%; height: 700px;')
+          .overlay-container(style = 'position: absolute; z-index: 3; top: 0; left: 0; pointer-events: none;')  
+            img#transparentesBildOverlay(style='width: 100%; opacity: 0.5; display: none;')
