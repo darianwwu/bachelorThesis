@@ -4,3 +4,6 @@ hilfsdateienmodellerstellung/
 venv/
 public/tifs
 __pycache__
+credentials/
+automatischeanalyse/Change-detection-in-multitemporal-satellite-images-master/Change-detection-in-multitemporal-satellite-images-master/images
+FakeBilderBachelor/
