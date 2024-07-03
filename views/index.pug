@@ -7,21 +7,15 @@ block content
     .row
       .col-md-6
         .image-container
-          //input#locationInputLat(type='text' placeholder='Location Lat')
-          //input#locationInputLon(type='text' placeholder='Location Lon')
-          //button#locationInputApply Bestätigen
           input#imageUploadInput(type='file' accept='image/*')
-          img#previewImage(src='#' alt='Preview Image' style='width: 100%;')
+          img#socialMediaBild(src='#' alt='Bild aus dem Social Media Post' style='width: 100%;')
           button#uebereinanderlegenButton Bild auf Karte legen
           input#transparenzRegler(type='range' min='0' max='100' value='50')
           input#textInput(type='text' placeholder='Hier Text eingeben...')
           button#textInputApplyButton Text nutzen
           button#kartenCoordsApplyButton Karten-Rechteck nutzen
-          
-          //input#linkInput(type='text' placeholder='Link')
-
       .col-md-6(style='position: relative;')
-        img#my-img(alt='Preview Image' style='width: 100%;')
+        img#my-img(alt='Satellitenbild' style='width: 100%;')
         #mapUndBildOverlayContainer
           .map-container(style = 'position: relative; z-index: 1;')
             #map(style='width: 100%; height: 700px;')

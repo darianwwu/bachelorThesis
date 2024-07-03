@@ -1,8 +1,5 @@
 const imageUploadInput = document.getElementById('imageUploadInput');
-const previewImage = document.getElementById('previewImage');
-//const buttonLocation = document.getElementById('locationInputApply');
-//const feldLocationLat = document.getElementById('locationInputLat');
-//const feldLocationLon = document.getElementById('locationInputLon');
+const socialMediaBild = document.getElementById('socialMediaBild');
 const bildUeberKarteButton = document.getElementById('uebereinanderlegenButton');
 const bildTransaparenzRegler = document.getElementById('transparenzRegler');
 const transparentesBildOverlay = document.getElementById('transparentesBildOverlay');
@@ -14,7 +11,6 @@ const textInput = document.getElementById('textInput');
 
 let coordinates = { lat: 52.96251, lng: 17.625188 }; //Test-Koordinaten, werden später durch dynamische Koordinaten ersetzt
 let mapcoordinates = {minLng: 0, minLat: 0, maxLng: 0, maxLat: 0};
-let inputtext = "Das Atomium in Brüssel Belgien ist ein sehr interessantes Bauwerk, hier its ien Bild davon.";
 let ueberlagert = false;
 
 kartenCoordsApplyButton.addEventListener('click', () => {
@@ -115,14 +111,14 @@ textInputApplyButton.addEventListener('click', () => {
  */
 bildUeberKarteButton.addEventListener('click', () => {
   if(ueberlagert == false) {
-    transparentesBildOverlay.src = previewImage.src;
-    previewImage.style.display = 'none';
+    transparentesBildOverlay.src = socialMediaBild.src;
+    socialMediaBild.style.display = 'none';
     transparentesBildOverlay.style.display = 'block';
     transparentesBildOverlay.style.pointerEvents = 'none'; // Klicks gehen durch das Bild hindurch
     ueberlagert = true;
   }
   else {
-    previewImage.style.display = 'block';
+    socialMediaBild.style.display = 'block';
     transparentesBildOverlay.style.display = 'none';
     ueberlagert = false;
   }
@@ -160,14 +156,14 @@ buttonLocation.addEventListener('click', () => {
 
 /**
  * Event-Listener, der dafür sorgt, dass das über den Datei-Upload ausgewählte Bild auf der Webseite angezeigt wird.
- * Benötigte DOM-Elemente: imageUploadInput, previewImage
+ * Benötigte DOM-Elemente: imageUploadInput, socialMediaBild
  */
 imageUploadInput.addEventListener('change', function() {
     const file = this.files[0];
     const reader = new FileReader();
 
     reader.addEventListener('load', function() {
-        previewImage.src = reader.result;
+        socialMediaBild.src = reader.result;
     });
 
     if (file) {
