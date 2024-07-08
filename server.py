@@ -31,6 +31,7 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, confusion_matrix
+import datetime
 
 app = Flask(__name__)
 CORS(app)
@@ -109,7 +110,7 @@ def geocode():
         print('text geocode:', text)
         result = geocode_address(text)
         if result:
-            # Nominatim gibt eine Liste von Ergebnissen zurück; wir nehmen das erste
+            # Nominatim gibt eine Liste von Ergebnissen zurück, erstes Ergebnis auswählen
             first_result = result[0]
             coords = {
                 'lat': first_result['lat'],
@@ -344,7 +345,7 @@ def get_image_from_map_usa_only():
         while not os.path.isfile(output_file) or old_file_size != os.path.getsize(output_file):
             print("Warten auf die Erstellung der Datei...")
             old_file_size = os.path.getsize(output_file) if os.path.isfile(output_file) else 0
-            time.sleep(1)  # Warten Sie 1 Sekunde zwischen den Überprüfungen
+            time.sleep(1)  # 1 Sekunde warten zwischen den Überprüfungen
 
         # Das TIF in PNG umwandeln mithilfe von gdal_translate
         gdal_translate = 'C:\\Program Files\\GDAL\\gdal_translate.exe'
@@ -481,7 +482,7 @@ def get_image():
         while not os.path.isfile(output_file) or old_file_size != os.path.getsize(output_file):
             print("Warten auf die Erstellung der Datei...")
             old_file_size = os.path.getsize(output_file) if os.path.isfile(output_file) else 0
-            time.sleep(1)  # Warten Sie 1 Sekunde zwischen den Überprüfungen
+            time.sleep(1)  # 1 Sekunde warten zwischen den Überprüfungen
 
         # Das TIF in PNG umwandeln mithilfe von gdal_translate
         gdal_translate = 'C:\\Program Files\\GDAL\\gdal_translate.exe'
@@ -615,7 +616,7 @@ def get_image_usa_only():
         while not os.path.isfile(output_file) or old_file_size != os.path.getsize(output_file):
             print("Warten auf die Erstellung der Datei...")
             old_file_size = os.path.getsize(output_file) if os.path.isfile(output_file) else 0
-            time.sleep(1)  # Warten Sie 1 Sekunde zwischen den Überprüfungen
+            time.sleep(1)  # 1 Sekunde warten zwischen den Überprüfungen
 
         # Das TIF in PNG umwandeln mithilfe von gdal_translate
         gdal_translate = 'C:\\Program Files\\GDAL\\gdal_translate.exe'
