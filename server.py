@@ -401,7 +401,7 @@ def get_image():
         coordinates = request.get_json()
         coords = ee.Geometry.Point([coordinates['lng'], coordinates['lat']])
         maxCloudCover = 10
-        bufferSize = 4000
+        bufferSize = 500
 
         # Die Sentinel-2-Bildsammlung laden
         sentinel2 = (ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
@@ -529,5 +529,138 @@ def get_image():
         app.logger.exception(e)
         return str(e), 500
 
+@app.route('/imageusaonly', methods=['POST'])
+def get_image_usa_only():
+    try:
+        # Koordinaten und Parameter festlegen
+        coordinates = request.get_json()
+        coords = ee.Geometry.Point([coordinates['lng'], coordinates['lat']])
+        maxCloudCover = 10
+        bufferSize = 500
+
+        # Die Sentinel-2-Bildsammlung laden
+        sentinel2 = (ee.ImageCollection("USDA/NAIP/DOQQ")
+            .filterBounds(coords)
+            .sort('system:index', False))
+
+        # Das neueste Bild auswählen
+        #TODO: Zeitlichen Aspekt berücksichtigen
+        image = sentinel2.first()
+
+        # Ein rechteckiges Gebiet um den Punkt erstellen
+        region = coords.buffer(bufferSize).bounds()
+
+        # RGB-Bänder auswählen und auf das rechteckige Gebiet zuschneiden
+        rgbImage = image.select(['R', 'G', 'B']).clip(region)
+
+        # Eine Download-URL für das Bild generieren
+        url = rgbImage.getDownloadUrl({
+            'scale': 1,
+            'crs': 'EPSG:4326',
+            'region': region.getInfo()['coordinates'],
+            'fileFormat': 'GeoTIFF'
+        })
+        
+        # Das Bild herunterladen
+        response = requests.get(url)
+        if response.status_code != 200:
+            raise Exception(f"Request failed with status {response.status_code}")
+
+        # Die ZIP-Datei als temporäre Datei speichern
+        zip_file_name = 'image.zip'
+        with open(zip_file_name, 'wb') as f:
+            f.write(response.content)
+
+        # Die ZIP-Datei entpacken
+        with zipfile.ZipFile(zip_file_name, 'r') as zip_ref:
+            zip_ref.extractall('.')
+
+        # Die TIF-Dateien durchlaufen und verschieben
+        tif_files = []
+        tifs_directory = 'C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs'
+
+        if not os.path.exists(tifs_directory):
+            os.makedirs(tifs_directory)
+
+        for tif_file_name in os.listdir('.'):
+            if tif_file_name.endswith('.tif'):
+                current_path = os.path.join(os.getcwd(), tif_file_name)
+                band_name = tif_file_name.split('.')[-2].split('_')[-1]
+                new_file_name = f"{band_name}.tif"
+                new_path = os.path.join(tifs_directory, new_file_name)
+                shutil.move(current_path, new_path)
+
+        # Die TIF-Dateien zu einer einzigen Datei zusammenführen
+        python_exe = 'C:\\Users\\User\\anaconda3\\python.exe'
+        gdal_merge = 'C:\\Users\\User\\anaconda3\\Scripts\\gdal_merge.py'
+        output_file = 'C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\merged.tif'
+        tif_files = ['C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\R.tif', 
+                    'C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\G.tif', 
+                    'C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\B.tif']
+
+        command = [python_exe, gdal_merge, '-init', '255', '-o', output_file, '-separate'] + tif_files
+
+        try:
+            result = subprocess.run(command, shell=False, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            print("Ausgabe:", result.stdout.decode())
+            print("Fehlerausgabe:", result.stderr.decode())
+        except subprocess.CalledProcessError as e:
+            print("Fehler beim Ausführen von gdal_merge:", e)
+            print("Befehl:", ' '.join(command))
+            print("Fehlerausgabe:", e.stderr.decode())
+            raise
+
+        # Warten, bis die Datei existiert und ihre Größe sich nicht mehr ändert
+        old_file_size = 0
+        while not os.path.isfile(output_file) or old_file_size != os.path.getsize(output_file):
+            print("Warten auf die Erstellung der Datei...")
+            old_file_size = os.path.getsize(output_file) if os.path.isfile(output_file) else 0
+            time.sleep(1)  # Warten Sie 1 Sekunde zwischen den Überprüfungen
+
+        # Das TIF in PNG umwandeln mithilfe von gdal_translate
+        gdal_translate = 'C:\\Program Files\\GDAL\\gdal_translate.exe'
+        input_file_new = 'C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\merged.tif'
+
+        # Basis-Output-Dateiname
+        output_file_base = 'C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\mergedtif.png'
+
+        # Überprüfen, ob die Datei bereits existiert
+        if os.path.exists(output_file_base):
+            # Falls die Datei existiert, eine neue Nummer suchen
+            count = 1
+            while True:
+                # Neuen Dateinamen erstellen
+                output_file_new = f'{output_file_base[:-4]}{count}.png'
+                if not os.path.exists(output_file_new):
+                    break
+                count += 1
+        else:
+            # Falls die Datei nicht existiert, den ursprünglichen Dateinamen verwenden
+            output_file_new = output_file_base
+        
+        command = [gdal_translate, '-ot', 'Byte', '-scale', '-of', 'PNG', '-b', '1', '-b', '2', '-b', '3', input_file_new, output_file_new]
+
+        try:
+            result = subprocess.run(command, shell=False, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            print("Ausgabe:", result.stdout.decode())
+            print("Fehlerausgabe:", result.stderr.decode())
+        except subprocess.CalledProcessError as e:
+            print("Fehler beim Ausführen von gdal_translate:", e)
+            print("Befehl:", ' '.join(command))
+            print("Fehlerausgabe:", e.stderr.decode())
+            raise
+
+        # Nicht mehr benötigte Dateien löschen
+        os.remove(zip_file_name)
+        os.remove('C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\R.tif')
+        os.remove('C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\G.tif')
+        os.remove('C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\B.tif')
+        os.remove('C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\merged.tif')
+
+        # Das PNG-Bild zurückgeben
+        return send_file(output_file_new, mimetype='image/png')
+    except Exception as e:
+        app.logger.exception(e)
+        return str(e), 500
 if __name__ == '__main__':
     app.run(debug=True)

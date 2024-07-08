@@ -15,15 +15,16 @@ let ueberlagert = false;
 
 /**
  * Event-Listener, der das in der Leaflet Map gezeichnete Rechteck ausliest und mit dessen Koordinaten ein Earth Engine Bild anzeigt, wenn der Button geklickt wird.
+ * Es wird zwischen Bereichen, die innerhalb der USA und außerhalb der USA liegen, unterschieden.
  */
 kartenCoordsApplyButton.addEventListener('click', () => {
   // Funktion zur Überprüfung, ob die Koordinaten innerhalb der USA (Mainland) liegen
   function isWithinUSA(coords) {
     const usaBounds = {
-      minLat: 24.396308, // Südlichster Punkt der kontinentalen USA
+      minLat: 24.7433195, // Südlichster Punkt der kontinentalen USA
       maxLat: 49.3457868, // Nördlichster Punkt der kontinentalen USA
-      minLng: -125.000000, // Westlichster Punkt der kontinentalen USA
-      maxLng: -66.934570 // Östlichster Punkt der kontinentalen USA
+      minLng: -124.7844079, // Westlichster Punkt der kontinentalen USA
+      maxLng: -66.9513812 // Östlichster Punkt der kontinentalen USA
     };
 
     return coords.minLat >= usaBounds.minLat && coords.maxLat <= usaBounds.maxLat &&
@@ -99,7 +100,23 @@ textInputApplyButton.addEventListener('click', () => {
     coordinates = { lat: parseFloat(data.coords.lat), lng: parseFloat(data.coords.lon) };
     console.log('Coordinates nach Änderung:', coordinates);
 
-    return fetch('http://localhost:5000/image', {
+    // Funktion zur Überprüfung, ob der Punkt innerhalb der USA (Mainland) liegt
+    function isWithinUSA(coords) {
+      const usaBounds = {
+        minLat: 24.396308, // Südlichster Punkt der kontinentalen USA
+        maxLat: 49.384358, // Nördlichster Punkt der kontinentalen USA
+        minLng: -125.000000, // Westlichster Punkt der kontinentalen USA
+        maxLng: -66.934570 // Östlichster Punkt der kontinentalen USA
+      };
+
+      return coords.lat >= usaBounds.minLat && coords.lat <= usaBounds.maxLat &&
+             coords.lng >= usaBounds.minLng && coords.lng <= usaBounds.maxLng;
+    }
+
+    // Bestimmen Sie die richtige Route basierend auf den Koordinaten
+    const route = isWithinUSA(coordinates) ? '/imageusaonly' : '/image';
+
+    return fetch(`http://localhost:5000${route}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
