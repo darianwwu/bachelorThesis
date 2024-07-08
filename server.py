@@ -28,6 +28,9 @@ import torchvision.transforms as transforms
 from torchvision.models import resnet50
 from sklearn.model_selection import train_test_split
 from torch.utils.data import Dataset, DataLoader
+from torchvision import transforms
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report, confusion_matrix
 
 app = Flask(__name__)
 CORS(app)
@@ -39,14 +42,6 @@ key_file = './credentials/ee-heinich04-805b2e12705e.json'
 scopes = ['https://www.googleapis.com/auth/earthengine']
 #api_key = 'AIzaSyB5OacCI7Nt76RIUn0qeyoGMKhFBdEWUaU'
 
-#twitter_api_key = '4TzCQMeLfu6kClXdUEwlhlWwd'
-#twitter_api_key_secret = 'QlpUT15BywcD0PjQigRquuKSnZMJy64rHm0F8u1u56hl6WMvht'
-#twitter_bearer_token = 'AAAAAAAAAAAAAAAAAAAAAEYWugEAAAAATZ5pNTl0naZyvuvMDQFb1bkvduU%3DlDs8iHTEy7AohL8jPb19f5p1p2VErEwu6KDZKF3Nk0D7zOOGx1'
-#twitter_access_token = '1670759875285065729-S0ltHACDHfG3DD5aELrpkL2BeQd5ZN'
-#twitter_access_token_secret = '30VTA2g7WGurD70QtxggpAWqkoLfSfmA1nt8Ee4q35zP0'
-#auth = tweepy.OAuth1UserHandler(twitter_api_key, twitter_api_key_secret, twitter_access_token, twitter_access_token_secret)
-#api = tweepy.API(auth)
-
 # Authentifizierung mit JWT
 credentials = Credentials.from_service_account_file(key_file, scopes=scopes)
 
@@ -55,154 +50,6 @@ ee.Initialize(credentials)
 
 # Trainiertes Modell laden
 nlp = spacy.load(r"C:\Users\User\Documents\GitHub\bachelorThesis\trainiertesmodell")
-
-# Gerät festlegen (GPU, wenn verfügbar, sonst CPU)
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-# Bildtransformationen definieren
-transform = transforms.Compose([
-    transforms.Resize((224, 224)),
-    transforms.RandomHorizontalFlip(),
-    transforms.RandomRotation(10),
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-])
-
-class SatelliteImageDataset(Dataset):
-    def __init__(self, root_dir, transform=None):
-        self.root_dir = root_dir
-        self.transform = transform
-        self.classes = ['REAL', 'FAKE']
-        self.images = []
-        self.labels = []
-
-        for class_idx, class_name in enumerate(self.classes):
-            class_dir = os.path.join(root_dir, class_name)
-            for img_name in os.listdir(class_dir):
-                self.images.append(os.path.join(class_dir, img_name))
-                self.labels.append(class_idx)
-
-    def __len__(self):
-        return len(self.images)
-
-    def __getitem__(self, idx):
-        img_path = self.images[idx]
-        image = Image.open(img_path).convert('RGB')
-        label = self.labels[idx]
-
-        if self.transform:
-            image = self.transform(image)
-
-        return image, label
-
-def get_model():
-    model = resnet50(pretrained=True)
-    for param in model.parameters():
-        param.requires_grad = False
-    num_ftrs = model.fc.in_features
-    model.fc = torch.nn.Linear(num_ftrs, 2)  # 2 Klassen: echt und gefälscht
-    return model.to(device)
-
-def train_model(model, train_loader, criterion, optimizer, num_epochs=10):
-    for epoch in range(num_epochs):
-        model.train()
-        running_loss = 0.0
-        correct = 0
-        total = 0
-        print(f'Starting epoch {epoch+1}/{num_epochs}')
-        for inputs, labels in train_loader:
-            inputs, labels = inputs.to(device), labels.to(device)
-            optimizer.zero_grad()
-            outputs = model(inputs)
-            loss = criterion(outputs, labels)
-            loss.backward()
-            optimizer.step()
-            running_loss += loss.item()
-            _, predicted = torch.max(outputs.data, 1)
-            total += labels.size(0)
-            correct += (predicted == labels).sum().item()
-        
-        epoch_loss = running_loss / len(train_loader)
-        epoch_acc = 100 * correct / total
-        print(f'Epoch {epoch+1}/{num_epochs}, Loss: {epoch_loss:.4f}, Accuracy: {epoch_acc:.2f}%')
-    
-    return model
-
-def evaluate_model(model, test_loader):
-    model.eval()
-    correct = 0
-    total = 0
-    with torch.no_grad():
-        for inputs, labels in test_loader:
-            inputs, labels = inputs.to(device), labels.to(device)
-            outputs = model(inputs)
-            _, predicted = torch.max(outputs.data, 1)
-            total += labels.size(0)
-            correct += (predicted == labels).sum().item()
-    accuracy = 100 * correct / total
-    print(f'Accuracy on test images: {accuracy:.2f}%')
-    return accuracy
-
-def prepare_data(root_dir, batch_size=32):
-    full_dataset = SatelliteImageDataset(root_dir, transform=transform)
-    train_size = int(0.8 * len(full_dataset))
-    test_size = len(full_dataset) - train_size
-    train_dataset, test_dataset = torch.utils.data.random_split(full_dataset, [train_size, test_size])
-
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
-
-    return train_loader, test_loader
-
-def predict_image(model, image_path):
-    model.eval()
-    img = Image.open(image_path).convert('RGB')
-    img_tensor = transform(img).unsqueeze(0).to(device)
-    with torch.no_grad():
-        output = model(img_tensor)
-        _, predicted = torch.max(output.data, 1)
-    return "Gefälscht" if predicted.item() == 1 else "Echt"
-
-def run_satellite_image_detection(root_dir):
-    train_loader, test_loader = prepare_data(root_dir)
-    print("Daten vorbereitet")
-
-    model = get_model()
-    criterion = torch.nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.fc.parameters(), lr=0.001)
-    print("Modell und Optimizer initialisiert")
-
-    model = train_model(model, train_loader, criterion, optimizer, num_epochs=20)
-    print("Training abgeschlossen")
-
-    accuracy = evaluate_model(model, test_loader)
-    print(f'Final Accuracy on test set: {accuracy:.2f}%')
-
-    return model, accuracy
-
-def main():
-    print("Das Hauptskript wird ausgeführt.")
-    test_image_path = r"C:\Users\User\Desktop\StyleGANohneOrtsinformationen\validation\REAL\000000000.jpg"
-    prediction = predict_image(trained_model, test_image_path)
-    print(f"Vorhersage für {test_image_path}: {prediction}")
-
-
-
-
-# Funktion zum Analysieren eines Tweets (nicht funktionsfähig, da kostenlose Twitter API nur Schreibrechte unterstützt )
-def tweet_analysieren():
-    tweet_id = '1800815302608838722'
-    tweet = api.get_status(tweet_id)
-
-    twitter_text = tweet.text
-    media = tweet.entities.get('media', [])
-    if len(media) > 0:
-        image_url = media[0]['media_url']
-
-    print(f'Text: {twitter_text}')
-    print(f'Image URL: {image_url}')
-
-#tweet_analysieren()
 
 # Funktion zum Geocoden von extrahierten Entitäten (Text -> Koodinaten)
 def geocode_address(address):
@@ -219,6 +66,7 @@ def geocode_address(address):
         return response.json()
     else:
         return {}
+
 
 # Basis-Route
 @app.route('/')
@@ -284,7 +132,7 @@ def get_image_from_map():
         maxCloudCover = 10
         #bufferSize = 4000
         # Die Sentinel-2-Bildsammlung laden
-        sentinel2 = (ee.ImageCollection('COPERNICUS/S2')
+        sentinel2 = (ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
             .filterBounds(coords)
             .filter(ee.Filter.lte('CLOUDY_PIXEL_PERCENTAGE', maxCloudCover))
             .sort('system:time_start', False))
@@ -420,7 +268,7 @@ def get_image():
         bufferSize = 4000
 
         # Die Sentinel-2-Bildsammlung laden
-        sentinel2 = (ee.ImageCollection('COPERNICUS/S2')
+        sentinel2 = (ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
             .filterBounds(coords)
             .filter(ee.Filter.lte('CLOUDY_PIXEL_PERCENTAGE', maxCloudCover))
             .sort('system:time_start', False))
@@ -545,5 +393,5 @@ def get_image():
         app.logger.exception(e)
         return str(e), 500
 
-if __name__ == "__main__":
-    main()
+if __name__ == '__main__':
+    app.run(debug=True)

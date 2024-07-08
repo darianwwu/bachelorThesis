@@ -7,3 +7,5 @@ __pycache__
 credentials/
 automatischeanalyse/Change-detection-in-multitemporal-satellite-images-master/Change-detection-in-multitemporal-satellite-images-master/images
 FakeBilderBachelor/
+trained_satellite_model.pth
+satellite_image_detector.pth
