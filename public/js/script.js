@@ -17,7 +17,22 @@ let ueberlagert = false;
  * Event-Listener, der das in der Leaflet Map gezeichnete Rechteck ausliest und mit dessen Koordinaten ein Earth Engine Bild anzeigt, wenn der Button geklickt wird.
  */
 kartenCoordsApplyButton.addEventListener('click', () => {
-  fetch('http://localhost:5000/imagefrommap', {
+  // Funktion zur Überprüfung, ob die Koordinaten innerhalb der USA (Mainland) liegen
+  function isWithinUSA(coords) {
+    const usaBounds = {
+      minLat: 24.396308, // Südlichster Punkt der kontinentalen USA
+      maxLat: 49.3457868, // Nördlichster Punkt der kontinentalen USA
+      minLng: -125.000000, // Westlichster Punkt der kontinentalen USA
+      maxLng: -66.934570 // Östlichster Punkt der kontinentalen USA
+    };
+
+    return coords.minLat >= usaBounds.minLat && coords.maxLat <= usaBounds.maxLat &&
+           coords.minLng >= usaBounds.minLng && coords.maxLng <= usaBounds.maxLng;
+  }
+
+  const route = isWithinUSA(mapcoordinates) ? '/imagefrommapusaonly' : '/imagefrommap';
+
+  fetch(`http://localhost:5000${route}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -34,7 +49,7 @@ kartenCoordsApplyButton.addEventListener('click', () => {
     drawnItems.clearLayers();
   })
   .catch((error) => console.error('Error:', error));
-  });
+});
 
 /**
  * Event-Listener, der den eingegebenen Text analysiert und an dem gefundenen Ort ein Earth Engine Bild anzeigt, wenn der Button geklickt wird.
