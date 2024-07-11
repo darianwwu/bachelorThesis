@@ -1,4 +1,3 @@
-const imageUploadInput = document.getElementById('imageUploadInput'); // Input-Element für das hochladen eines Satellitenbildes von Social Media
 const socialMediaBild = document.getElementById('socialMediaBild'); // Bild-Element zum Anzeigen des hochgeladenen Satellitenbild von Social Media
 const bildUeberKarteButton = document.getElementById('uebereinanderlegenButton'); // Button zum Überlagern des Satellitenbildes von Social Media über die Karte
 const bildTransaparenzRegler = document.getElementById('transparenzRegler'); // Regler zum Einstellen der Transparenz des über die Karte gelegten Bildes
@@ -8,67 +7,31 @@ const textInputApplyButton = document.getElementById('textInputApplyButton'); //
 const kartenCoordsApplyButton = document.getElementById('kartenCoordsApplyButton'); // Button zum Erstellen eines Satellitenbilds mit den Koordinaten des auf der Karte gezeichneten Rechtecks
 const mapUndBildOverlayContainer = document.getElementById('mapUndBildOverlayContainer'); // Container für die Karte und das (transparente) Bild Overlay
 const textInput = document.getElementById('textInput'); // Text-Input-Feld für die Eingabe des zu analysierenden Textes eines Social Media Posts
-
+const satellitenbildDatum  = document.getElementById('satellitenbildDatum '); // Text-Element für das Datum des Satellitenbildes
 let coordinates = {lat: 0, lng: 0};
 let mapcoordinates = {minLng: 0, minLat: 0, maxLng: 0, maxLat: 0};
 let ueberlagert = false;
 
 /**
- * Event-Listener, der das in der Leaflet Map gezeichnete Rechteck ausliest und mit dessen Koordinaten ein Earth Engine Bild anzeigt, wenn der Button geklickt wird.
- * Es wird zwischen Bereichen, die innerhalb der USA und außerhalb der USA liegen, unterschieden.
- */
-kartenCoordsApplyButton.addEventListener('click', () => {
-  // Funktion zur Überprüfung, ob die Koordinaten innerhalb der USA (Mainland) liegen
-  function isWithinUSA(coords) {
-    const usaBounds = {
-      minLat: 24.7433195, // Südlichster Punkt der kontinentalen USA
-      maxLat: 49.3457868, // Nördlichster Punkt der kontinentalen USA
-      minLng: -124.7844079, // Westlichster Punkt der kontinentalen USA
-      maxLng: -66.9513812 // Östlichster Punkt der kontinentalen USA
-    };
-
-    return coords.minLat >= usaBounds.minLat && coords.maxLat <= usaBounds.maxLat &&
-           coords.minLng >= usaBounds.minLng && coords.maxLng <= usaBounds.maxLng;
-  }
-
-  const route = isWithinUSA(mapcoordinates) ? '/imagefrommapusaonly' : '/imagefrommap';
-
-  fetch(`http://localhost:5000${route}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(mapcoordinates),
-  })
-  .then(response => response.blob())
-  .then(blob => {
-    const url = URL.createObjectURL(blob);
-    satellitenbildEarthEngine.src = url;
-    mapUndBildOverlayContainer.style.display = 'none';
-    let eckenkoordinaten = L.latLngBounds(L.latLng(mapcoordinates.minLat, mapcoordinates.minLng), L.latLng(mapcoordinates.maxLat, mapcoordinates.maxLng));
-    map.fitBounds(eckenkoordinaten);
-    drawnItems.clearLayers();
-  })
-  .catch((error) => console.error('Error:', error));
-});
-
-/**
- * Event-Listener, der den eingegebenen Text analysiert und an dem gefundenen Ort ein Earth Engine Bild anzeigt, wenn der Button geklickt wird.
+ * Event-Listener, der den eingegebenen Text analysiert und die gefundenen Entitäten an den Geocoding-Service sendet, um die Koordinaten zu ermitteln und die Leaflet Map entsprechend zu zentrieren.
  */
 textInputApplyButton.addEventListener('click', () => {
+  let abschicktext = removeSpecialCharacters(textInput.value);
+  console.log('Abschicktext:', abschicktext);
+  
   fetch('http://localhost:5000/classify', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      text: textInput.value
+      text: abschicktext
     }),
   })
   .then(response => response.json())
   .then(data => {
     const entities = data.entities.map(([start, end, label]) => {
-      const entityText = textInput.value.slice(start, end);
+      const entityText = abschicktext.slice(start, end);
       return { text: entityText, label: label };
     });
   
@@ -99,39 +62,92 @@ textInputApplyButton.addEventListener('click', () => {
     console.log('Coordinates vor Änderung:', coordinates);
     coordinates = { lat: parseFloat(data.coords.lat), lng: parseFloat(data.coords.lon) };
     console.log('Coordinates nach Änderung:', coordinates);
-
-    // Funktion zur Überprüfung, ob der Punkt innerhalb der USA (Mainland) liegt
-    function isWithinUSA(coords) {
-      const usaBounds = {
-        minLat: 24.7433195, // Südlichster Punkt der kontinentalen USA
-        maxLat: 49.3457868, // Nördlichster Punkt der kontinentalen USA
-        minLng: -124.7844079, // Westlichster Punkt der kontinentalen USA
-        maxLng: -66.9513812 // Östlichster Punkt der kontinentalen USA
-      };
-
-      return coords.lat >= usaBounds.minLat && coords.lat <= usaBounds.maxLat &&
-             coords.lng >= usaBounds.minLng && coords.lng <= usaBounds.maxLng;
-    }
-
-    const route = isWithinUSA(coordinates) ? '/imageusaonly' : '/image';
-
-    return fetch(`http://localhost:5000${route}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(coordinates),
-    });
-  })
-  .then(response => response.blob())
-  .then(blob => {
-    const url = URL.createObjectURL(blob);
-    satellitenbildEarthEngine.src = url;
-    mapUndBildOverlayContainer.style.display = 'none';
+    // Zoomen auf die gefundenen Koordinaten
+    let eckenkoordinaten = L.latLngBounds(L.latLng(coordinates.lat, coordinates.lng), L.latLng(coordinates.lat, coordinates.lng));
+    map.fitBounds(eckenkoordinaten);
   })
   .catch((error) => {
     console.error('Error:', error);
   });
+});
+
+/**
+ * Event-Listener, der das in der Zwischenablage befindliche Bild auf der Webseite anzeigt, wenn ein Bild aus der Zwischenablage mittels Strg+V auf die Seite kopiert wird.
+ */
+document.addEventListener('paste', (event) => {
+  const items = event.clipboardData.items;
+  for (const item of items) {
+      if (item.type.startsWith('image/')) {
+          const file = item.getAsFile();
+          const reader = new FileReader();
+          reader.onload = (event) => {
+              const imgElement = socialMediaBild;
+              imgElement.src = event.target.result;
+              imgElement.style.display = 'block';
+          };
+          reader.readAsDataURL(file);
+      }
+  }
+});
+
+/**
+ * Event-Listener, der das in der Leaflet Map gezeichnete Rechteck ausliest und mit dessen Koordinaten ein Earth Engine Bild anzeigt, wenn der Button geklickt wird.
+ * Es wird zwischen Bereichen, die innerhalb der USA und außerhalb der USA liegen, unterschieden.
+ */
+kartenCoordsApplyButton.addEventListener('click', () => {
+  function isWithinUSA(coords) {
+    const usaBounds = {
+      minLat: 24.7433195,
+      maxLat: 49.3457868,
+      minLng: -124.7844079,
+      maxLng: -66.9513812
+    };
+
+    return coords.minLat >= usaBounds.minLat && coords.maxLat <= usaBounds.maxLat &&
+           coords.minLng >= usaBounds.minLng && coords.maxLng <= usaBounds.maxLng;
+  }
+
+  const route = isWithinUSA(mapcoordinates) ? '/imagefrommapusaonly' : '/imagefrommap';
+
+  fetch(`http://localhost:5000${route}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(mapcoordinates),
+  })
+  .then(response => response.json())
+  .then(data => {
+    const { image, date, filename } = data;
+
+    // Bildinhalt als Data URL setzen
+    const url = `data:image/png;base64,${image}`;
+    satellitenbildEarthEngine.src = url;
+    mapUndBildOverlayContainer.style.display = 'none';
+    let eckenkoordinaten = L.latLngBounds(
+      L.latLng(mapcoordinates.minLat, mapcoordinates.minLng),
+      L.latLng(mapcoordinates.maxLat, mapcoordinates.maxLng)
+    );
+    map.fitBounds(eckenkoordinaten);
+    drawnItems.clearLayers();
+
+    // Datum anzeigen
+    const timestamp = parseInt(date, 10);
+    if (!isNaN(timestamp)) {
+      const dateObject = new Date(timestamp);
+      const formattedDate = dateObject.toLocaleString();
+
+      const satellitenbildDatum = document.getElementById('satellitenbildDatum');
+      if (satellitenbildDatum) {
+        satellitenbildDatum.textContent = formattedDate;
+      } else {
+        console.error('Element "satellitenbildDatum" nicht gefunden.');
+      }
+    } else {
+      console.error('Ungültiger Timestamp:', date);
+    }
+  })
+  .catch(error => console.error('Error:', error));
 });
 
 /**
@@ -157,22 +173,6 @@ bildUeberKarteButton.addEventListener('click', () => {
  */
 bildTransaparenzRegler.addEventListener('change', () => {
   transparentesBildOverlay.style.opacity = bildTransaparenzRegler.value /100;
-});
-
-/**
- * Event-Listener, der dafür sorgt, dass das über den Datei-Upload ausgewählte Bild auf der Webseite angezeigt wird.
- */
-imageUploadInput.addEventListener('change', function() {
-    const file = this.files[0];
-    const reader = new FileReader();
-
-    reader.addEventListener('load', function() {
-        socialMediaBild.src = reader.result;
-    });
-
-    if (file) {
-        reader.readAsDataURL(file);
-    }
 });
 
 // Initialisierung der Karte
@@ -276,6 +276,15 @@ function removeArticles(text) {
   articles.forEach(article => {
       const regex = new RegExp('\\b' + article, 'gi');
       text = text.replace(regex, '');
+  });
+  return text;
+}
+
+function removeSpecialCharacters(text) {
+  const specialCharacters = ["#", "@", "|", "<", ">", ".", ":", ";"];
+  specialCharacters.forEach(specialCharacter => {
+    const regex = new RegExp('\\' + specialCharacter, 'g'); // Keine Wortgrenze, nur das Zeichen selbst
+    text = text.replace(regex, '');
   });
   return text;
 }

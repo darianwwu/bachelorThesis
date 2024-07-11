@@ -1,17 +1,7 @@
-from flask import Flask, request, send_file, jsonify
+from flask import Flask, request, make_response, send_file, jsonify
 from flask_cors import CORS
 from osgeo import gdal
-from skimage import io, filters, feature
-from skimage.feature import graycomatrix, graycoprops, local_binary_pattern
 from google.oauth2.service_account import Credentials
-from PIL import Image, ImageChops, ImageEnhance
-from collections import Counter
-from scipy.stats import entropy
-from scipy.fftpack import dct
-from sklearn.ensemble import IsolationForest
-import matplotlib.pyplot as plt
-import numpy as np
-import cv2
 import ee
 import os
 import shutil
@@ -20,18 +10,8 @@ import zipfile
 import subprocess
 import time
 import spacy
-import geocoder
-import tweepy
-import torch
 import warnings
-import torchvision.transforms as transforms
-from torchvision.models import resnet50
-from sklearn.model_selection import train_test_split
-from torch.utils.data import Dataset, DataLoader
-from torchvision import transforms
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import classification_report, confusion_matrix
-import datetime
+import base64
 
 app = Flask(__name__)
 CORS(app)
@@ -51,6 +31,7 @@ ee.Initialize(credentials)
 
 # Trainiertes Modell laden
 nlp = spacy.load(r"C:\Users\User\Documents\GitHub\bachelorThesis\trainiertesmodell")
+
 
 # Funktion zum Geocoden von extrahierten Entitäten (Text -> Koodinaten)
 def geocode_address(address):
@@ -73,14 +54,6 @@ def geocode_address(address):
 @app.route('/')
 def hello_world():
     return 'Earth Engine initialized successfully.'
-
-# Metadaten-Route
-@app.route('/metadata')
-def get_metadata():
-    # Abrufen der Metadaten eines Bildes (Beispielaufruf)
-    image = ee.Image('LANDSAT/LC08/C01/T1/LC08_044034_20140318')
-    info = image.getInfo()
-    return info
 
 # Route, die in script.js mit dem Text aus dem Social Media Post aufgerufen wird und die relevanten Entitäten für das Geocoding extrahiert
 @app.route('/classify', methods=['POST'])
@@ -131,7 +104,7 @@ def get_image_from_map():
         mapcoordinates = request.get_json()
         coords = ee.Geometry.Rectangle([mapcoordinates['minLng'], mapcoordinates['minLat'], mapcoordinates['maxLng'], mapcoordinates['maxLat']])
         maxCloudCover = 10
-        #bufferSize = 4000
+
         # Die Sentinel-2-Bildsammlung laden
         sentinel2 = (ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
             .filterBounds(coords)
@@ -139,8 +112,9 @@ def get_image_from_map():
             .sort('system:time_start', False))
 
         # Das neueste Bild auswählen
-        #TODO: Zeitlichen Aspekt berücksichtigen
         image = sentinel2.first()
+        
+        date = image.get('system:time_start').getInfo()
 
         # Ein rechteckiges Gebiet um den Punkt erstellen
         region = coords.bounds()
@@ -217,7 +191,10 @@ def get_image_from_map():
         input_file_new = 'C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\merged.tif'
 
         # Basis-Output-Dateiname
-        output_file_base = 'C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\mergedtif.png'
+        output_file_base = 'C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\mergedtif'
+
+        # Den Unix-Timestamp hinzufügen
+        timestamp = str(date)
 
         # Überprüfen, ob die Datei bereits existiert
         if os.path.exists(output_file_base):
@@ -252,8 +229,19 @@ def get_image_from_map():
         os.remove('C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\B2.tif')
         os.remove('C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\merged.tif')
 
-        # Das PNG-Bild zurückgeben
-        return send_file(output_file_new, mimetype='image/png')
+        # Bildinhalt als Base64-kodierten String lesen
+        with open(output_file_new, 'rb') as image_file:
+            encoded_string = base64.b64encode(image_file.read()).decode()
+
+        # JSON-Antwort mit Bildinhalt und Datum erstellen
+        response_data = {
+            'image': encoded_string,
+            'date': date,  # Hier sicherstellen, dass das Datum als Integer oder String gesetzt wird
+            'filename': os.path.basename(output_file_new)
+        }
+        
+        return jsonify(response_data)
+
     except Exception as e:
         app.logger.exception(e)
         return str(e), 500
@@ -268,14 +256,14 @@ def get_image_from_map_usa_only():
         coords = ee.Geometry.Rectangle([mapcoordinates['minLng'], mapcoordinates['minLat'], mapcoordinates['maxLng'], mapcoordinates['maxLat']])
         maxCloudCover = 10
         #bufferSize = 4000
-        # Die Sentinel-2-Bildsammlung laden
-        sentinel2 = (ee.ImageCollection("USDA/NAIP/DOQQ")
+        # Die NAIP/DOQQ - Bildsammlung laden
+        naipdoqq = (ee.ImageCollection("USDA/NAIP/DOQQ")
             .filterBounds(coords)
             .sort('system:index', False))
 
         # Das neueste Bild auswählen
-        #TODO: Zeitlichen Aspekt berücksichtigen
-        image = sentinel2.first()
+        image = naipdoqq.first()
+        date = image.get('system:time_start').getInfo()
 
         # Ein rechteckiges Gebiet um den Punkt erstellen
         region = coords.bounds()
@@ -285,7 +273,7 @@ def get_image_from_map_usa_only():
 
         # Eine Download-URL für das Bild generieren
         url = rgbImage.getDownloadUrl({
-            'scale': 1,
+            'scale': 2,
             'crs': 'EPSG:4326',
             'region': region.getInfo()['coordinates'],
             'fileFormat': 'GeoTIFF'
@@ -352,7 +340,10 @@ def get_image_from_map_usa_only():
         input_file_new = 'C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\merged.tif'
 
         # Basis-Output-Dateiname
-        output_file_base = 'C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\mergedtif.png'
+        output_file_base = 'C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\mergedtif'
+
+        # Den Unix-Timestamp hinzufügen
+        timestamp = str(date)
 
         # Überprüfen, ob die Datei bereits existiert
         if os.path.exists(output_file_base):
@@ -387,281 +378,21 @@ def get_image_from_map_usa_only():
         os.remove('C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\B.tif')
         os.remove('C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\merged.tif')
 
-        # Das PNG-Bild zurückgeben
-        return send_file(output_file_new, mimetype='image/png')
+        # Bildinhalt als Base64-kodierten String lesen
+        with open(output_file_new, 'rb') as image_file:
+            encoded_string = base64.b64encode(image_file.read()).decode()
+
+        # JSON-Antwort mit Bildinhalt und Datum erstellen
+        response_data = {
+            'image': encoded_string,
+            'date': date,  # Hier sicherstellen, dass das Datum als Integer oder String gesetzt wird
+            'filename': os.path.basename(output_file_new)
+        }
+        
+        return jsonify(response_data)
     except Exception as e:
         app.logger.exception(e)
         return str(e), 500
 
-
-#Route, die in script.js mit aus dem Text estrahierten Koordinaten aufgerufen wird und ein TIF und ein PNG der entsprechenden Region erstellt
-@app.route('/image', methods=['POST'])
-def get_image():
-    try:
-        # Koordinaten und Parameter festlegen
-        coordinates = request.get_json()
-        coords = ee.Geometry.Point([coordinates['lng'], coordinates['lat']])
-        maxCloudCover = 10
-        bufferSize = 500
-
-        # Die Sentinel-2-Bildsammlung laden
-        sentinel2 = (ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
-            .filterBounds(coords)
-            .filter(ee.Filter.lte('CLOUDY_PIXEL_PERCENTAGE', maxCloudCover))
-            .sort('system:time_start', False))
-
-        # Das neueste Bild auswählen
-        #TODO: Zeitlichen Aspekt berücksichtigen
-        image = sentinel2.first()
-
-        # Ein rechteckiges Gebiet um den Punkt erstellen
-        region = coords.buffer(bufferSize).bounds()
-
-        # RGB-Bänder auswählen und auf das rechteckige Gebiet zuschneiden
-        rgbImage = image.select(['B4', 'B3', 'B2']).clip(region)
-
-        # Eine Download-URL für das Bild generieren
-        url = rgbImage.getDownloadUrl({
-            'scale': 10,
-            'crs': 'EPSG:4326',
-            'region': region.getInfo()['coordinates'],
-            'fileFormat': 'GeoTIFF'
-        })
-        
-        # Das Bild herunterladen
-        response = requests.get(url)
-        if response.status_code != 200:
-            raise Exception(f"Request failed with status {response.status_code}")
-
-        # Die ZIP-Datei als temporäre Datei speichern
-        zip_file_name = 'image.zip'
-        with open(zip_file_name, 'wb') as f:
-            f.write(response.content)
-
-        # Die ZIP-Datei entpacken
-        with zipfile.ZipFile(zip_file_name, 'r') as zip_ref:
-            zip_ref.extractall('.')
-
-        # Die TIF-Dateien durchlaufen und verschieben
-        tif_files = []
-        tifs_directory = 'C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs'
-
-        if not os.path.exists(tifs_directory):
-            os.makedirs(tifs_directory)
-
-        for tif_file_name in os.listdir('.'):
-            if tif_file_name.endswith('.tif'):
-                current_path = os.path.join(os.getcwd(), tif_file_name)
-                band_name = tif_file_name.split('.')[-2].split('_')[-1]
-                new_file_name = f"{band_name}.tif"
-                new_path = os.path.join(tifs_directory, new_file_name)
-                shutil.move(current_path, new_path)
-
-        # Die TIF-Dateien zu einer einzigen Datei zusammenführen
-        python_exe = 'C:\\Users\\User\\anaconda3\\python.exe'
-        gdal_merge = 'C:\\Users\\User\\anaconda3\\Scripts\\gdal_merge.py'
-        output_file = 'C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\merged.tif'
-        tif_files = ['C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\B4.tif', 
-                    'C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\B3.tif', 
-                    'C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\B2.tif']
-
-        command = [python_exe, gdal_merge, '-init', '255', '-o', output_file, '-separate'] + tif_files
-
-        try:
-            result = subprocess.run(command, shell=False, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            print("Ausgabe:", result.stdout.decode())
-            print("Fehlerausgabe:", result.stderr.decode())
-        except subprocess.CalledProcessError as e:
-            print("Fehler beim Ausführen von gdal_merge:", e)
-            print("Befehl:", ' '.join(command))
-            print("Fehlerausgabe:", e.stderr.decode())
-            raise
-
-        # Warten, bis die Datei existiert und ihre Größe sich nicht mehr ändert
-        old_file_size = 0
-        while not os.path.isfile(output_file) or old_file_size != os.path.getsize(output_file):
-            print("Warten auf die Erstellung der Datei...")
-            old_file_size = os.path.getsize(output_file) if os.path.isfile(output_file) else 0
-            time.sleep(1)  # 1 Sekunde warten zwischen den Überprüfungen
-
-        # Das TIF in PNG umwandeln mithilfe von gdal_translate
-        gdal_translate = 'C:\\Program Files\\GDAL\\gdal_translate.exe'
-        input_file_new = 'C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\merged.tif'
-
-        # Basis-Output-Dateiname
-        output_file_base = 'C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\mergedtif.png'
-
-        # Überprüfen, ob die Datei bereits existiert
-        if os.path.exists(output_file_base):
-            # Falls die Datei existiert, eine neue Nummer suchen
-            count = 1
-            while True:
-                # Neuen Dateinamen erstellen
-                output_file_new = f'{output_file_base[:-4]}{count}.png'
-                if not os.path.exists(output_file_new):
-                    break
-                count += 1
-        else:
-            # Falls die Datei nicht existiert, den ursprünglichen Dateinamen verwenden
-            output_file_new = output_file_base
-        
-        command = [gdal_translate, '-ot', 'Byte', '-scale', '0', '3000', '0', '255', '-of', 'PNG', '-b', '1', '-b', '2', '-b', '3', input_file_new, output_file_new]
-
-        try:
-            result = subprocess.run(command, shell=False, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            print("Ausgabe:", result.stdout.decode())
-            print("Fehlerausgabe:", result.stderr.decode())
-        except subprocess.CalledProcessError as e:
-            print("Fehler beim Ausführen von gdal_translate:", e)
-            print("Befehl:", ' '.join(command))
-            print("Fehlerausgabe:", e.stderr.decode())
-            raise
-
-        # Nicht mehr benötigte Dateien löschen
-        os.remove(zip_file_name)
-        os.remove('C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\B4.tif')
-        os.remove('C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\B3.tif')
-        os.remove('C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\B2.tif')
-        os.remove('C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\merged.tif')
-
-        # Das PNG-Bild zurückgeben
-        return send_file(output_file_new, mimetype='image/png')
-    except Exception as e:
-        app.logger.exception(e)
-        return str(e), 500
-
-@app.route('/imageusaonly', methods=['POST'])
-def get_image_usa_only():
-    try:
-        # Koordinaten und Parameter festlegen
-        coordinates = request.get_json()
-        coords = ee.Geometry.Point([coordinates['lng'], coordinates['lat']])
-        maxCloudCover = 10
-        bufferSize = 500
-
-        # Die Sentinel-2-Bildsammlung laden
-        sentinel2 = (ee.ImageCollection("USDA/NAIP/DOQQ")
-            .filterBounds(coords)
-            .sort('system:index', False))
-
-        # Das neueste Bild auswählen
-        #TODO: Zeitlichen Aspekt berücksichtigen
-        image = sentinel2.first()
-
-        # Ein rechteckiges Gebiet um den Punkt erstellen
-        region = coords.buffer(bufferSize).bounds()
-
-        # RGB-Bänder auswählen und auf das rechteckige Gebiet zuschneiden
-        rgbImage = image.select(['R', 'G', 'B']).clip(region)
-
-        # Eine Download-URL für das Bild generieren
-        url = rgbImage.getDownloadUrl({
-            'scale': 1,
-            'crs': 'EPSG:4326',
-            'region': region.getInfo()['coordinates'],
-            'fileFormat': 'GeoTIFF'
-        })
-        
-        # Das Bild herunterladen
-        response = requests.get(url)
-        if response.status_code != 200:
-            raise Exception(f"Request failed with status {response.status_code}")
-
-        # Die ZIP-Datei als temporäre Datei speichern
-        zip_file_name = 'image.zip'
-        with open(zip_file_name, 'wb') as f:
-            f.write(response.content)
-
-        # Die ZIP-Datei entpacken
-        with zipfile.ZipFile(zip_file_name, 'r') as zip_ref:
-            zip_ref.extractall('.')
-
-        # Die TIF-Dateien durchlaufen und verschieben
-        tif_files = []
-        tifs_directory = 'C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs'
-
-        if not os.path.exists(tifs_directory):
-            os.makedirs(tifs_directory)
-
-        for tif_file_name in os.listdir('.'):
-            if tif_file_name.endswith('.tif'):
-                current_path = os.path.join(os.getcwd(), tif_file_name)
-                band_name = tif_file_name.split('.')[-2].split('_')[-1]
-                new_file_name = f"{band_name}.tif"
-                new_path = os.path.join(tifs_directory, new_file_name)
-                shutil.move(current_path, new_path)
-
-        # Die TIF-Dateien zu einer einzigen Datei zusammenführen
-        python_exe = 'C:\\Users\\User\\anaconda3\\python.exe'
-        gdal_merge = 'C:\\Users\\User\\anaconda3\\Scripts\\gdal_merge.py'
-        output_file = 'C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\merged.tif'
-        tif_files = ['C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\R.tif', 
-                    'C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\G.tif', 
-                    'C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\B.tif']
-
-        command = [python_exe, gdal_merge, '-init', '255', '-o', output_file, '-separate'] + tif_files
-
-        try:
-            result = subprocess.run(command, shell=False, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            print("Ausgabe:", result.stdout.decode())
-            print("Fehlerausgabe:", result.stderr.decode())
-        except subprocess.CalledProcessError as e:
-            print("Fehler beim Ausführen von gdal_merge:", e)
-            print("Befehl:", ' '.join(command))
-            print("Fehlerausgabe:", e.stderr.decode())
-            raise
-
-        # Warten, bis die Datei existiert und ihre Größe sich nicht mehr ändert
-        old_file_size = 0
-        while not os.path.isfile(output_file) or old_file_size != os.path.getsize(output_file):
-            print("Warten auf die Erstellung der Datei...")
-            old_file_size = os.path.getsize(output_file) if os.path.isfile(output_file) else 0
-            time.sleep(1)  # 1 Sekunde warten zwischen den Überprüfungen
-
-        # Das TIF in PNG umwandeln mithilfe von gdal_translate
-        gdal_translate = 'C:\\Program Files\\GDAL\\gdal_translate.exe'
-        input_file_new = 'C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\merged.tif'
-
-        # Basis-Output-Dateiname
-        output_file_base = 'C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\mergedtif.png'
-
-        # Überprüfen, ob die Datei bereits existiert
-        if os.path.exists(output_file_base):
-            # Falls die Datei existiert, eine neue Nummer suchen
-            count = 1
-            while True:
-                # Neuen Dateinamen erstellen
-                output_file_new = f'{output_file_base[:-4]}{count}.png'
-                if not os.path.exists(output_file_new):
-                    break
-                count += 1
-        else:
-            # Falls die Datei nicht existiert, den ursprünglichen Dateinamen verwenden
-            output_file_new = output_file_base
-        
-        command = [gdal_translate, '-ot', 'Byte', '-scale', '-of', 'PNG', '-b', '1', '-b', '2', '-b', '3', input_file_new, output_file_new]
-
-        try:
-            result = subprocess.run(command, shell=False, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            print("Ausgabe:", result.stdout.decode())
-            print("Fehlerausgabe:", result.stderr.decode())
-        except subprocess.CalledProcessError as e:
-            print("Fehler beim Ausführen von gdal_translate:", e)
-            print("Befehl:", ' '.join(command))
-            print("Fehlerausgabe:", e.stderr.decode())
-            raise
-
-        # Nicht mehr benötigte Dateien löschen
-        os.remove(zip_file_name)
-        os.remove('C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\R.tif')
-        os.remove('C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\G.tif')
-        os.remove('C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\B.tif')
-        os.remove('C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\merged.tif')
-
-        # Das PNG-Bild zurückgeben
-        return send_file(output_file_new, mimetype='image/png')
-    except Exception as e:
-        app.logger.exception(e)
-        return str(e), 500
 if __name__ == '__main__':
     app.run(debug=True)

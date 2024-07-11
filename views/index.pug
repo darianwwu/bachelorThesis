@@ -6,15 +6,19 @@ block content
     .row
       .col-md-6
         .image-container
-          input#imageUploadInput(type='file' accept='image/*')
-          img#socialMediaBild(src='#' alt='Bild aus dem Social Media Post' style='width: 100%;')
           button#uebereinanderlegenButton Bild auf Karte legen
           input#transparenzRegler(type='range' min='0' max='100' value='50')
           input#textInput(type='text' placeholder='Hier Text eingeben...')
           button#textInputApplyButton Text nutzen
-          button#kartenCoordsApplyButton Karten-Rechteck nutzen
+          img#socialMediaBild(style="max-width: 100%; display: block")
+          p
+          p Mit Strg+V Bild einfügen
+          //button#analyzeButton Analyze Change Detection
+          //div#result(style="margin-top: 20px")
       .col-md-6(style='position: relative;')
         img#satellitenbildEarthEngine(alt='Satellitenbild' style='width: 100%;')
+        button#kartenCoordsApplyButton Satellitenbild aus Kartenausschnitt erstellen
+        p#satellitenbildDatum
         #mapUndBildOverlayContainer
           .map-container(style = 'position: relative; z-index: 1;')
             #map(style='width: 100%; height: 700px;')
