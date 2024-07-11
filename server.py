@@ -12,6 +12,7 @@ import time
 import spacy
 import warnings
 import base64
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 CORS(app)
@@ -101,19 +102,27 @@ def geocode():
 def get_image_from_map():
     try:
         # Koordinaten und Parameter festlegen
-        mapcoordinates = request.get_json()
+        data = request.get_json()
+        mapcoordinates = data['coords']
+        zeitfuersatellitenbild = data['date']  # Unix-Timestamp
         coords = ee.Geometry.Rectangle([mapcoordinates['minLng'], mapcoordinates['minLat'], mapcoordinates['maxLng'], mapcoordinates['maxLat']])
-        maxCloudCover = 10
+        maxCloudCover = 20
 
-        # Die Sentinel-2-Bildsammlung laden
+        # Die Sentinel-2-Bildsammlung laden und filtern
         sentinel2 = (ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
             .filterBounds(coords)
             .filter(ee.Filter.lte('CLOUDY_PIXEL_PERCENTAGE', maxCloudCover))
-            .sort('system:time_start', False))
+            .filter(ee.Filter.date(datetime.utcfromtimestamp(zeitfuersatellitenbild / 1000) - timedelta(days=30),
+                                   datetime.utcfromtimestamp(zeitfuersatellitenbild / 1000) + timedelta(days=30)))
+            .map(lambda image: image.set('time_diff', ee.Number(image.get('system:time_start')).subtract(zeitfuersatellitenbild).abs()))
+            .sort('time_diff'))
 
-        # Das neueste Bild auswählen
+        # Das Bild auswählen, das dem gegebenen Datum am nächsten ist
         image = sentinel2.first()
-        
+
+        if image is None:
+            raise Exception("Kein Bild gefunden für die angegebenen Parameter.")
+
         date = image.get('system:time_start').getInfo()
 
         # Ein rechteckiges Gebiet um den Punkt erstellen
@@ -252,9 +261,10 @@ def get_image_from_map():
 def get_image_from_map_usa_only():
     try:
         # Koordinaten und Parameter festlegen
-        mapcoordinates = request.get_json()
+        data = request.get_json()
+        mapcoordinates = data['coords']
         coords = ee.Geometry.Rectangle([mapcoordinates['minLng'], mapcoordinates['minLat'], mapcoordinates['maxLng'], mapcoordinates['maxLat']])
-        maxCloudCover = 10
+        #maxCloudCover = 20
         #bufferSize = 4000
         # Die NAIP/DOQQ - Bildsammlung laden
         naipdoqq = (ee.ImageCollection("USDA/NAIP/DOQQ")

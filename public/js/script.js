@@ -8,10 +8,31 @@ const kartenCoordsApplyButton = document.getElementById('kartenCoordsApplyButton
 const mapUndBildOverlayContainer = document.getElementById('mapUndBildOverlayContainer'); // Container für die Karte und das (transparente) Bild Overlay
 const textInput = document.getElementById('textInput'); // Text-Input-Feld für die Eingabe des zu analysierenden Textes eines Social Media Posts
 const satellitenbildDatum  = document.getElementById('satellitenbildDatum '); // Text-Element für das Datum des Satellitenbildes
+const datumTag = document.getElementById('datumTag'); // Text-Element für das Datum des Satellitenbildes
+const datumMonat = document.getElementById('datumMonat'); // Text-Element für das Datum des Satellitenbildes
+const datumJahr = document.getElementById('datumJahr'); // Text-Element für das Datum des Satellitenbildes
+
 let coordinates = {lat: 0, lng: 0};
 let mapcoordinates = {minLng: 0, minLat: 0, maxLng: 0, maxLat: 0};
 let ueberlagert = false;
 
+function zeitInputsToUnix () {
+  let tag = datumTag.value;
+  let monat = datumMonat.value;
+  let jahr = datumJahr.value;
+
+  if(tag === null) {
+    tag = 1;
+  }
+  if(monat === null) {
+    monat = 1;
+  }
+  if(jahr === null) {
+    return Date.now();
+  }
+  let datum = new Date(jahr, monat, tag);
+  return datum.getTime();
+}
 /**
  * Event-Listener, der den eingegebenen Text analysiert und die gefundenen Entitäten an den Geocoding-Service sendet, um die Koordinaten zu ermitteln und die Leaflet Map entsprechend zu zentrieren.
  */
@@ -95,6 +116,7 @@ document.addEventListener('paste', (event) => {
  * Es wird zwischen Bereichen, die innerhalb der USA und außerhalb der USA liegen, unterschieden.
  */
 kartenCoordsApplyButton.addEventListener('click', () => {
+  let zeit = zeitInputsToUnix();
   function isWithinUSA(coords) {
     const usaBounds = {
       minLat: 24.7433195,
@@ -114,7 +136,10 @@ kartenCoordsApplyButton.addEventListener('click', () => {
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(mapcoordinates),
+     body: JSON.stringify({
+        coords: mapcoordinates,
+        date: zeit
+      }),
   })
   .then(response => response.json())
   .then(data => {
