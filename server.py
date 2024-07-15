@@ -33,7 +33,6 @@ ee.Initialize(credentials)
 # Trainiertes Modell laden
 nlp = spacy.load(r"C:\Users\User\Documents\GitHub\bachelorThesis\trainiertesmodell")
 
-
 # Funktion zum Geocoden von extrahierten Entitäten (Text -> Koodinaten)
 def geocode_address(address):
     base_url = "https://nominatim.openstreetmap.org/search"
@@ -49,7 +48,6 @@ def geocode_address(address):
         return response.json()
     else:
         return {}
-
 
 # Basis-Route
 @app.route('/')
@@ -245,7 +243,7 @@ def get_image_from_map():
         # JSON-Antwort mit Bildinhalt und Datum erstellen
         response_data = {
             'image': encoded_string,
-            'date': date,  # Hier sicherstellen, dass das Datum als Integer oder String gesetzt wird
+            'date': date,
             'filename': os.path.basename(output_file_new)
         }
         
@@ -395,7 +393,7 @@ def get_image_from_map_usa_only():
         # JSON-Antwort mit Bildinhalt und Datum erstellen
         response_data = {
             'image': encoded_string,
-            'date': date,  # Hier sicherstellen, dass das Datum als Integer oder String gesetzt wird
+            'date': date,
             'filename': os.path.basename(output_file_new)
         }
         

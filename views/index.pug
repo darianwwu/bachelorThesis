@@ -1,57 +1,96 @@
 extends layout
 
 block content
-  h1 Semi-automatische Erkennung manipulierter Satellitenbilder in sozialen Medien durch Vergleich mit Referenzdaten
-  .row
-    .row
-      .col-md-6
-        .image-container
-          button#uebereinanderlegenButton Bild auf Karte legen
-          input#transparenzRegler(type='range' min='0' max='100' value='50')
-          input#textInput(type='text' placeholder='Hier Text eingeben...')
-          br
-          label(for="day") Tag: 
-          input#datumTag(type="number" name="day" min="1" max="31")
-          label(for="month") Monat: 
-          select#datumMonat(name="month")
-            option(value="") Wähle einen Monat
-            option(value="1") Januar
-            option(value="2") Februar
-            option(value="3") März
-            option(value="4") April
-            option(value="5") Mai
-            option(value="6") Juni
-            option(value="7") Juli
-            option(value="8") August
-            option(value="9") September
-            option(value="10") Oktober
-            option(value="11") November
-            option(value="12") Dezember
-          label(for="year") Monat: 
-          select#datumJahr(name="year")
-            option(value="") Wähle einen Jahr
-            option(value="2024") 2024
-            option(value="2023") 2023
-            option(value="2022") 2022
-            option(value="2021") 2021
-            option(value="2020") 2020
-            option(value="2019") 2019
-            option(value="2018") 2018
-            option(value="2017") 2017
-            option(value="2016") 2016
-            option(value="2015") 2015
-          button#textInputApplyButton Text nutzen
-          img#socialMediaBild(style="max-width: 100%; display: block")
-          p
-          p Mit Strg+V Bild einfügen
-          //button#analyzeButton Analyze Change Detection
-          //div#result(style="margin-top: 20px")
-      .col-md-6(style='position: relative;')
-        img#satellitenbildEarthEngine(alt='Satellitenbild' style='width: 100%;')
-        button#kartenCoordsApplyButton Satellitenbild aus Kartenausschnitt erstellen
-        p#satellitenbildDatum
-        #mapUndBildOverlayContainer
-          .map-container(style = 'position: relative; z-index: 1;')
-            #map(style='width: 100%; height: 700px;')
-          .overlay-container(style = 'position: absolute; z-index: 3; top: 0; left: 0; pointer-events: none;')  
-            img#transparentesBildOverlay(style='width: 100%; opacity: 0.5; display: none;')
+  h2 Semi-automatische Erkennung manipulierter Satellitenbilder in sozialen Medien durch Vergleich mit Referenzdaten
+  // Das tab Gerüst wurde von W3Schools übernommen und angepasst. Originalquelle: W3Schools. How TO - Form with Multiple Steps. Abgerufen am 13.07.2024, von https://www.w3schools.com/howto/howto_js_form_steps.asp.
+  form#regForm(action='')
+    .tab
+      h3 1. Bild und Text einfügen
+      | Bild mit Strg+V einfügen.
+      p
+        img#socialMediaBild(style="max-width: 100%; display: block")
+      p
+        input#textInput(type='text' placeholder='Hier Text eingeben...')
+    .tab
+      h3 2. Datum eingeben
+      | Wann wurde das Bild aufgenommen? Wenn kein Datum bekannt ist, überspringen Sie diesen Schritt.
+      p
+        label(for="day") Tag: 
+        input#datumTag(type="number" name="day" min="1" max="31")
+        label(for="month") Monat: 
+        select#datumMonat(name="month")
+          option(value="") Wähle einen Monat
+          option(value="1") Januar
+          option(value="2") Februar
+          option(value="3") März
+          option(value="4") April
+          option(value="5") Mai
+          option(value="6") Juni
+          option(value="7") Juli
+          option(value="8") August
+          option(value="9") September
+          option(value="10") Oktober
+          option(value="11") November
+          option(value="12") Dezember
+        label(for="year") Jahr: 
+        select#datumJahr(name="year")
+          option(value="") Wähle ein Jahr
+          option(value="2024") 2024
+          option(value="2023") 2023
+          option(value="2022") 2022
+          option(value="2021") 2021
+          option(value="2020") 2020
+          option(value="2019") 2019
+          option(value="2018") 2018
+          option(value="2017") 2017
+          option(value="2016") 2016
+          option(value="2015") 2015
+    .tab
+      h3 3. Genauen Ausschnitt auf Karte auswählen
+      | Nutzen Sie die Auswahlfunktion auf der Karte, um den genauen Ausschnitt zu bestimmen.
+      .row
+        .col-md-6
+          .image-container
+            img#socialMediaBildCopy(style="max-width: 100%; display: block")
+            button#uebereinanderlegenButton Bild auf Karte legen
+            input#transparenzRegler(type='range' min='0' max='100' value='50')
+        .col-md-6(style='position: relative;')
+          #mapUndBildOverlayContainer
+            .map-container(style = 'position: relative; z-index: 1;')
+              #map(style='width: 100%; height: 700px;')
+            .overlay-container(style = 'position: absolute; z-index: 3; top: 0; left: 0; pointer-events: none;')  
+              img#transparentesBildOverlay(style='width: 100%; opacity: 0.5; display: none;')
+    .tab
+      h3 4. Ergebnisse
+      | Ergebnisse werden hier dargestellt. Bitte warten Sie einen Moment, während das Satellitenbild erstellt wird.
+      .row
+        .col-md-6
+          .image-container
+            img#socialMediaBildCopy2(style="max-width: 100%; display: block")
+        .col-md-6(style='position: relative;')
+          img#satellitenbildEarthEngine(alt='Satellitenbild' style='width: 100%;')
+          p Datum des Satellitenbildes:
+          p#satellitenbildDatum
+    .tab
+      h3 5. Ergebnisse teilen
+      p Bitte beachten Sie, dass diese Bewertung nicht zu 100% zuverlässig sein muss.
+      p Im Zweifel stellen Sie bitte weitere Nachforschungen an oder kontaktieren die Urheber*In des Bildes.
+      .row
+        .col-md-6
+          .image-container
+            img#socialMediaBildCopy3(style="max-width: 100%; display: block")
+        .col-md-6(style='position: relative;')
+          img#satellitenbildEarthEngineCopy(alt='Satellitenbild' style='width: 100%;')
+          p Datum des Satellitenbildes:
+          p#satellitenbildDatumCopy
+          p Bewertung der automatisierten Analyse:
+    div(style='overflow:auto;')
+      div(style='float:right;')
+        button#prevBtn(type='button') Previous
+        button#nextBtn(type='button') Next
+    div(style='text-align:center;margin-top:40px;')
+      span.step
+      span.step
+      span.step
+      span.step
+      span.step

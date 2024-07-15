@@ -37,40 +37,6 @@ app.use(express.static(path.join(__dirname, "public")));
 const indexRouter = require("./routes/index");
 app.use("/", indexRouter);
 
-// Route zum Erstellen eines TIF
-// TODO In Python Code umwandeln
-/** 
-app.post("/createTif", async (req, res, next) => {
-    try {
-        const { latitude, longitude, startYear, endYear } = req.body;
-
-        // Beispiel für die Erstellung eines TIF mit Earth Engine
-        const image = ee.ImageCollection('LANDSAT/LC08/C01/T1_TOA')
-            .filterBounds(ee.Geometry.Point(parseFloat(longitude), parseFloat(latitude)))
-            .filterDate(startYear, endYear)
-            .median();
-
-        const tifUrl = await image.getDownloadURL({
-            name: 'landsat_image',
-            scale: 30,
-            region: ee.Geometry.Point(parseFloat(longitude), parseFloat(latitude)).buffer(10000).bounds(),
-            filePerBand: false,
-            format: 'geotiff',
-        });
-
-        const response = await fetch(tifUrl);
-        const tifBuffer = await response.buffer();
-
-        const outputPath = path.join(__dirname, 'public', 'tifs', 'landsat_image.tif');
-        await writeFileAsync(outputPath, tifBuffer);
-
-        res.send(`TIF wurde erfolgreich erstellt und unter ${outputPath} gespeichert.`);
-    } catch (error) {
-        console.error('Fehler beim Erstellen des TIF:', error);
-        res.status(500).send('Fehler beim Erstellen des TIF');
-    }
-});
-*/
 // Catch 404 and forward to error handler
 app.use(function(req, res, next) {
     next(createError(404));
