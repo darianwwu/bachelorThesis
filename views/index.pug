@@ -2,7 +2,7 @@ extends layout
 
 block content
   h2 Semi-automatische Erkennung manipulierter Satellitenbilder in sozialen Medien durch Vergleich mit Referenzdaten
-  // Das tab Gerüst wurde von W3Schools übernommen und angepasst. Originalquelle: W3Schools. How TO - Form with Multiple Steps. Abgerufen am 13.07.2024, von https://www.w3schools.com/howto/howto_js_form_steps.asp.
+  // Die .tab Architektur wurde von W3Schools übernommen und angepasst. Originalquelle: W3Schools. How TO - Form with Multiple Steps. Abgerufen am 13.07.2024, von https://www.w3schools.com/howto/howto_js_form_steps.asp.
   form#regForm(action='')
     .tab
       h3 1. Bild und Text einfügen
@@ -13,7 +13,7 @@ block content
         input#textInput(type='text' placeholder='Hier Text eingeben...')
     .tab
       h3 2. Datum eingeben
-      | Wann wurde das Bild aufgenommen? Wenn kein Datum bekannt ist, überspringen Sie diesen Schritt.
+      | Wann wurde das Bild aufgenommen? Wenn kein Datum bekannt ist, überspringe diesen Schritt.
       p
         label(for="day") Tag: 
         input#datumTag(type="number" name="day" min="1" max="31")
@@ -47,7 +47,10 @@ block content
           option(value="2015") 2015
     .tab
       h3 3. Genauen Ausschnitt auf Karte auswählen
-      | Nutzen Sie die Auswahlfunktion auf der Karte, um den genauen Ausschnitt zu bestimmen.
+      | Nutze die Karte, um den genauen Ausschnitt zu bestimmen.
+      | Zeichne ein Rechteck mit folgendem Button: 
+      img(src='/ErklaerungLeafletDraw.png' alt='Leaflet Draw Button' style='width: 50px;')
+      p
       .row
         .col-md-6
           .image-container
@@ -62,7 +65,7 @@ block content
               img#transparentesBildOverlay(style='width: 100%; opacity: 0.5; display: none;')
     .tab
       h3 4. Ergebnisse
-      | Ergebnisse werden hier dargestellt. Bitte warten Sie einen Moment, während das Satellitenbild erstellt wird.
+      | Die Ergebnisse werden hier dargestellt. Bitte warte einen Moment, während das Satellitenbild erstellt wird.
       .row
         .col-md-6
           .image-container
@@ -73,17 +76,19 @@ block content
           p#satellitenbildDatum
     .tab
       h3 5. Ergebnisse teilen
-      p Bitte beachten Sie, dass diese Bewertung nicht zu 100% zuverlässig sein muss.
-      p Im Zweifel stellen Sie bitte weitere Nachforschungen an oder kontaktieren die Urheber*In des Bildes.
+      p Bitte beachte, dass diese Bewertung nicht zu 100% zuverlässig sein muss.
+      p Im Zweifel stelle bitte weitere Nachforschungen an oder kontaktiere die Urheber*In des Bildes.
       .row
-        .col-md-6
+        .col-md-4
           .image-container
             img#socialMediaBildCopy3(style="max-width: 100%; display: block")
-        .col-md-6(style='position: relative;')
+        .col-md-4(style='position: relative;')
           img#satellitenbildEarthEngineCopy(alt='Satellitenbild' style='width: 100%;')
           p Datum des Satellitenbildes:
           p#satellitenbildDatumCopy
           p Bewertung der automatisierten Analyse:
+        .col-md-4
+          img#changeDetectionBild(alt='Analysebild, bitte warten...' style='width: 100%;')
     div(style='overflow:auto;')
       div(style='float:right;')
         button#prevBtn(type='button') Previous

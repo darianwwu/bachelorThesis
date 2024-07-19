@@ -13,6 +13,8 @@ import spacy
 import warnings
 import base64
 from datetime import datetime, timedelta
+from PIL import Image
+from io import BytesIO
 
 app = Flask(__name__)
 CORS(app)
@@ -49,6 +51,27 @@ def geocode_address(address):
     else:
         return {}
 
+
+def run_detect_change(first_image, second_image, output_directory):
+    # Pfad zur DetectChange.py Datei
+    detect_change_script = "C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\Change-detection-in-multitemporal-satellite-images-master\\scripts\\DetectChange.py"
+    
+    # Befehl zusammenstellen
+    command = [
+        "python",
+        detect_change_script,
+        "-io", first_image,
+        "-it", second_image,
+        "-o", output_directory
+    ]
+    
+    # Befehl ausführen
+    subprocess.run(command)
+    
+    # Hier wird angenommen, dass das Skript eine Datei 'processed_image.png' im output_directory erstellt
+    processed_image_path = os.path.join(output_directory, "difference.jpg")
+    return processed_image_path
+
 # Basis-Route
 @app.route('/')
 def hello_world():
@@ -69,6 +92,44 @@ def classify_text():
         entities = [(ent.start_char, ent.end_char, ent.label_) for ent in doc.ents]
         print(entities)
         return {'entities': entities}
+    except Exception as e:
+        app.logger.exception(e)
+        return str(e), 500
+
+@app.route('/detectchange', methods=['POST'])
+def detect_change():
+    try:
+        data = request.get_json()
+        social_media_bild_data = data['socialMediaBild'].split(",")[1]  # Entfernt den Base64-Header
+        satellitenbild_data = data['satellitenbild'].split(",")[1]  # Entfernt den Base64-Header
+        date = 1234567
+        # Konvertiert Base64 in ein PIL-Bild
+        social_media_bild = Image.open(BytesIO(base64.b64decode(social_media_bild_data)))
+        satellitenbild = Image.open(BytesIO(base64.b64decode(satellitenbild_data)))
+
+        # Beispiel: Speichern der Bilder (optional)
+        social_media_bild.save("social_media_bild.png")
+        satellitenbild.save("satellitenbild.png")
+
+        # Antwort (Beispiel)
+        output_file_new = run_detect_change(
+            "C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\social_media_bild.png",
+            "C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\satellitenbild.png",
+            "C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\change\\"
+        )
+
+        # Bildinhalt als Base64-kodierten String lesen
+        with open(output_file_new, 'rb') as image_file:
+            encoded_string = base64.b64encode(image_file.read()).decode()
+
+        # JSON-Antwort mit Bildinhalt und Datum erstellen
+        response_data = {
+            'image': encoded_string,
+            'date': date,
+            'filename': os.path.basename(output_file_new)
+        }
+        
+        return jsonify(response_data)
     except Exception as e:
         app.logger.exception(e)
         return str(e), 500

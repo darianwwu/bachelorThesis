@@ -11,8 +11,9 @@ const satellitenbildDatumCopy  = document.getElementById('satellitenbildDatumCop
 const datumTag = document.getElementById('datumTag'); // Text-Element für das Datum des Satellitenbildes
 const datumMonat = document.getElementById('datumMonat'); // Text-Element für das Datum des Satellitenbildes
 const datumJahr = document.getElementById('datumJahr'); // Text-Element für das Datum des Satellitenbildes
-const nextBtn = document.getElementById('nextBtn');
-const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn'); // Button zum Wechseln zum nächsten Schritt im Formular
+const prevBtn = document.getElementById('prevBtn'); // Button zum Wechseln zum vorherigen Schritt im Formular
+const changeDetectionBild = document.getElementById('changeDetectionBild'); // Bild-Element für die Ergebnisseite
 
 var coordinates = {lat: 0, lng: 0};
 var mapcoordinates = {minLng: 0, minLat: 0, maxLng: 0, maxLat: 0};
@@ -152,6 +153,7 @@ nextBtn.addEventListener('click', () => {
     })
     .then(response => response.json())
     .then(data => {
+      console.log('Ergebnis der Earth Engine:', data);
       const { image, date, filename } = data;
   
       // Bildinhalt als Data URL setzen
@@ -190,6 +192,26 @@ nextBtn.addEventListener('click', () => {
 
   //Schritt 4
   if(currentTab === 3) {
+    fetch('http://localhost:5000/detectchange', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        socialMediaBild: socialMediaBild.src,
+        satellitenbild: satellitenbildEarthEngine.src
+      }),
+    })
+    .then(response => response.json())
+    .then(data => {
+      console.log('Ergebnis der Change Detection:', data);
+      const { image, date, filename } = data;
+  
+      // Bildinhalt als Data URL setzen
+      const urlZwei = `data:image/png;base64,${image}`;
+      changeDetectionBild.src = urlZwei;
+    })
+    .catch(error => console.error('Error:', error));
     nextPrev(1);
     return;
   }
@@ -209,8 +231,8 @@ prevBtn.addEventListener('click', () => {
 });
 
 /**
- * Event-Listener, der die Karte neu zeichnet, wenn der Tab gewechselt wird.
- * (Notwendig, da die Karte bei der Initialisierung nicht sichtbar ist und daher nicht korrekt gezeichnet wird.)
+ * Event-Listener, der die Karte neu anzeigt, wenn der Tab gewechselt wird.
+ * (Notwendig, da die Karte bei der Initialisierung nicht sichtbar ist und daher nicht korrekt angezeigt wird.)
  */
 document.addEventListener('visibilitychange', function() {
   if (!document.hidden && currentTab === 2) {
@@ -270,7 +292,7 @@ bildTransaparenzRegler.addEventListener('change', () => {
 
 // Initialisierung der Karte
 var map = L.map('map').setView([51.505, -0.09], 13);
-// Hinzufügen der Tile Layer, gefunden unter https://leaflet-extras.github.io/leaflet-providers/preview/
+// Hinzufügen der Tile Layer, gefunden unter https://leaflet-extras.github.io/leaflet-providers/preview/ Zugriff am 25.06.2024
 var satelliteLayer = L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoiZHdlaXNzd3d1IiwiYSI6ImNsd3oxN2g5dDAyeGwycHF1Z29mYjV5enUifQ.7PQUPuJn6Nzz_tXGsIWdUw', {
 	minZoom: 0,
 	maxZoom: 20,
