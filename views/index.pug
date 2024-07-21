@@ -1,7 +1,7 @@
 extends layout
 
 block content
-  h2 Semi-automatische Erkennung manipulierter Satellitenbilder in sozialen Medien durch Vergleich mit Referenzdaten
+  h2 Erkennung manipulierter Satellitenbilder durch Vergleich mit Referenzdaten
   // Die .tab Architektur wurde von W3Schools übernommen und angepasst. Originalquelle: W3Schools. How TO - Form with Multiple Steps. Abgerufen am 13.07.2024, von https://www.w3schools.com/howto/howto_js_form_steps.asp.
   form#regForm(action='')
     .tab
@@ -14,6 +14,7 @@ block content
     .tab
       h3 2. Datum eingeben
       | Wann wurde das Bild aufgenommen? Wenn kein Datum bekannt ist, überspringe diesen Schritt.
+      | Es ist auch möglich, nur ein Jahr (oder Monat& Jahr) anzugeben.
       p
         label(for="day") Tag: 
         input#datumTag(type="number" name="day" min="1" max="31")
@@ -55,7 +56,7 @@ block content
         .col-md-6
           .image-container
             img#socialMediaBildCopy(style="max-width: 100%; display: block")
-            button#uebereinanderlegenButton Bild auf Karte legen
+            button#uebereinanderlegenButton Bild über Karte legen
             input#transparenzRegler(type='range' min='0' max='100' value='50')
         .col-md-6(style='position: relative;')
           #mapUndBildOverlayContainer
@@ -71,28 +72,35 @@ block content
           .image-container
             img#socialMediaBildCopy2(style="max-width: 100%; display: block")
         .col-md-6(style='position: relative;')
-          img#satellitenbildEarthEngine(alt='Satellitenbild' style='width: 100%;')
+          img#satellitenbildEarthEngine(alt='Satellitenbild lädt, bitte warten...' style='width: 100%;')
           p Datum des Satellitenbildes:
           p#satellitenbildDatum
     .tab
       h3 5. Ergebnisse teilen
       p Bitte beachte, dass diese Bewertung nicht zu 100% zuverlässig sein muss.
-      p Im Zweifel stelle bitte weitere Nachforschungen an oder kontaktiere die Urheber*In des Bildes.
+      | Im Zweifel stelle bitte weitere Nachforschungen an oder kontaktiere die Urheber*In des Bildes.
+      | Bei der automatisierten Analyse stellen rote Bereiche mögliche Manipulationen dar.
       .row
         .col-md-4
           .image-container
             img#socialMediaBildCopy3(style="max-width: 100%; display: block")
+            p Originalbild
         .col-md-4(style='position: relative;')
           img#satellitenbildEarthEngineCopy(alt='Satellitenbild' style='width: 100%;')
-          p Datum des Satellitenbildes:
+          p Vergleichsbild
           p#satellitenbildDatumCopy
-          p Bewertung der automatisierten Analyse:
         .col-md-4
-          img#changeDetectionBild(alt='Analysebild, bitte warten...' style='width: 100%;')
+          img#changeDetectionBild(alt='Analysebild lädt, bitte warten...' style='width: 100%;')
+          p Bewertung der automatisierten Analyse
+    .popup(id='popup', style='display:none;')
+      .popup-content
+        p Ergebnisse teilen
+        a(href='#' id='exampleLink') www.satellitenbildtester.de/share/2gU672g3S
+        button#copyLinkButton Link kopieren
     div(style='overflow:auto;')
       div(style='float:right;')
-        button#prevBtn(type='button') Previous
-        button#nextBtn(type='button') Next
+        button#prevBtn(type='button') Zurück
+        button#nextBtn(type='button') Weiter
     div(style='text-align:center;margin-top:40px;')
       span.step
       span.step

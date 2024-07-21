@@ -14,6 +14,9 @@ const datumJahr = document.getElementById('datumJahr'); // Text-Element für das
 const nextBtn = document.getElementById('nextBtn'); // Button zum Wechseln zum nächsten Schritt im Formular
 const prevBtn = document.getElementById('prevBtn'); // Button zum Wechseln zum vorherigen Schritt im Formular
 const changeDetectionBild = document.getElementById('changeDetectionBild'); // Bild-Element für die Ergebnisseite
+const popup = document.getElementById('popup');
+const copyLinkButton = document.getElementById('copyLinkButton');
+const exampleLink = document.getElementById('exampleLink');
 
 var coordinates = {lat: 0, lng: 0};
 var mapcoordinates = {minLng: 0, minLat: 0, maxLng: 0, maxLat: 0};
@@ -40,7 +43,7 @@ showTab(currentTab);
  *                             Außerdem wird das Datum des Satellitenbildes und das Ergebnis der automatischen Analyse
  *                             angezeigt.
  * Schritt 5 (currentTab = 4): Die Nutzer*innen wird auf die Teilen-Seite weitergeleitet, wo das Ergebnis übersichtlich
- *                             dargestellt wird und die Möglichkeit besteht, es zu teilen.                  
+ *                             dargestellt wird und die Möglichkeit besteht, es über ein Popup zu teilen.               
  */
 nextBtn.addEventListener('click', () => {
   //Schritt 1
@@ -218,7 +221,7 @@ nextBtn.addEventListener('click', () => {
 
   //Schritt 5
   if(currentTab === 4) {
-    nextPrev(1);
+    popup.style.display = 'block';
     return;
   }
 });
@@ -228,6 +231,17 @@ nextBtn.addEventListener('click', () => {
  */
 prevBtn.addEventListener('click', () => {
   nextPrev(-1);
+});
+
+/**
+ * Event-Listener, der den Link zum Teilen kopiert, wenn der Button geklickt wird.
+ */
+copyLinkButton.addEventListener('click', () => {
+  navigator.clipboard.writeText(exampleLink.href).then(() => {
+    alert('Link kopiert!');
+  }).catch(err => {
+    console.error('Error copying text: ', err);
+  });
 });
 
 /**
@@ -464,4 +478,9 @@ function fixStepIndicator(n) {
   }
   //... and adds the "active" class to the current step:
   x[n].className += " active";
+  
+  // Adds the "finish" class to all previous steps:
+  for (i = 0; i < n; i++) {
+    x[i].className += " finish";
+  }
 }
