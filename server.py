@@ -328,6 +328,7 @@ def get_image_from_map_usa_only():
         # Die NAIP/DOQQ - Bildsammlung laden
         naipdoqq = (ee.ImageCollection("USDA/NAIP/DOQQ")
             .filterBounds(coords)
+            .filter(ee.Filter.date('2020-01-01', '2022-12-31'))
             .sort('system:index', False))
 
         # Das neueste Bild auswählen

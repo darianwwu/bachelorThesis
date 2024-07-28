@@ -26,7 +26,7 @@ var datumEingabe = 1;
 var currentTab = 0;
 var socialMediaBildEingefuegt = false;
 var eckenkoordinaten;
-
+var beendet = false;
 showTab(currentTab);
 
 /**
@@ -45,7 +45,7 @@ showTab(currentTab);
  * Schritt 5 (currentTab = 4): Die Nutzer*innen wird auf die Teilen-Seite weitergeleitet, wo das Ergebnis übersichtlich
  *                             dargestellt wird und die Möglichkeit besteht, es über ein Popup zu teilen.               
  */
-nextBtn.addEventListener('click', () => {
+nextBtn.addEventListener('click', async () => {
   //Schritt 1
   if(currentTab === 0) {
     if(textInput.value === '' || socialMediaBildEingefuegt === false) {
@@ -130,6 +130,11 @@ nextBtn.addEventListener('click', () => {
     else {
     map.fitBounds(eckenkoordinaten);
     let zeit = datumEingabe;
+    // DOM-Elemente verstecken und Ladescreen anzeigen
+    document.getElementById('vorabschluss').style.display = 'none';
+    document.getElementById('nachabschluss').style.display = 'block';
+    nextBtn.style.display = 'none';
+    prevBtn.style.display = 'none';
     function isWithinUSA(coords) {
       const usaBounds = {
         minLat: 24.7433195,
@@ -143,59 +148,57 @@ nextBtn.addEventListener('click', () => {
     }
   
     const route = isWithinUSA(mapcoordinates) ? '/imagefrommapusaonly' : '/imagefrommap';
-  
-    fetch(`http://localhost:5000${route}`, {
+
+  try {
+    // Erste Anfrage
+    const response1 = await fetch(`http://localhost:5000${route}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-       body: JSON.stringify({
-          coords: mapcoordinates,
-          date: zeit
-        }),
-    })
-    .then(response => response.json())
-    .then(data => {
-      console.log('Ergebnis der Earth Engine:', data);
-      const { image, date, filename } = data;
-  
-      // Bildinhalt als Data URL setzen
-      const url = `data:image/png;base64,${image}`;
-      satellitenbildEarthEngine.src = url;
-      satellitenbildEarthEngineCopy.src = url;
-      mapUndBildOverlayContainer.style.display = 'none';
-      let eckenkoordinaten = L.latLngBounds(
-        L.latLng(mapcoordinates.minLat, mapcoordinates.minLng),
-        L.latLng(mapcoordinates.maxLat, mapcoordinates.maxLng)
-      );
-      map.fitBounds(eckenkoordinaten);
-      drawnItems.clearLayers();
-  
-      // Datum anzeigen
-      const timestamp = parseInt(date, 10);
-      if (!isNaN(timestamp)) {
-        const dateObject = new Date(timestamp);
-        const formattedDate = dateObject.toLocaleString();
-        if (satellitenbildDatum) {
-          satellitenbildDatum.textContent = formattedDate;
-          satellitenbildDatumCopy.textContent = formattedDate;
-        } else {
-          console.error('Element "satellitenbildDatum" nicht gefunden.');
-        }
-      } else {
-        console.error('Ungültiger Timestamp:', date);
-      }
-    })
-    .catch(error => console.error('Error:', error));
+      body: JSON.stringify({
+        coords: mapcoordinates,
+        date: zeit
+      }),
+    });
 
-      nextPrev(1);
-      return;
+    if (!response1.ok) {
+      throw new Error('Fehler bei der ersten Anfrage');
     }
-  }
 
-  //Schritt 4
-  if(currentTab === 3) {
-    fetch('http://localhost:5000/detectchange', {
+    const data1 = await response1.json();
+    console.log('Ergebnis der Earth Engine:', data1);
+    const { image, date, filename } = data1;
+
+    // Bildinhalt als Data URL setzen
+    const url = `data:image/png;base64,${image}`;
+    satellitenbildEarthEngine.src = url;
+    //satellitenbildEarthEngineCopy.src = url;
+    mapUndBildOverlayContainer.style.display = 'none';
+    let eckenkoordinaten = L.latLngBounds(
+      L.latLng(mapcoordinates.minLat, mapcoordinates.minLng),
+      L.latLng(mapcoordinates.maxLat, mapcoordinates.maxLng)
+    );
+    map.fitBounds(eckenkoordinaten);
+    drawnItems.clearLayers();
+
+    // Datum anzeigen
+    const timestamp = parseInt(date, 10);
+    if (!isNaN(timestamp)) {
+      const dateObject = new Date(timestamp);
+      const formattedDate = dateObject.toLocaleString();
+      if (satellitenbildDatum) {
+        satellitenbildDatum.textContent = formattedDate;
+        satellitenbildDatumCopy.textContent = formattedDate;
+      } else {
+        console.error('Element "satellitenbildDatum" nicht gefunden.');
+      }
+    } else {
+      console.error('Ungültiger Timestamp:', date);
+    }
+
+    // Zweite Anfrage
+    const response2 = await fetch('http://localhost:5000/detectchange', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -204,25 +207,34 @@ nextBtn.addEventListener('click', () => {
         socialMediaBild: socialMediaBild.src,
         satellitenbild: satellitenbildEarthEngine.src
       }),
-    })
-    .then(response => response.json())
-    .then(data => {
-      console.log('Ergebnis der Change Detection:', data);
-      const { image, date, filename } = data;
-  
-      // Bildinhalt als Data URL setzen
-      const urlZwei = `data:image/png;base64,${image}`;
-      changeDetectionBild.src = urlZwei;
-    })
-    .catch(error => console.error('Error:', error));
-    nextPrev(1);
-    return;
+    });
+
+    if (!response2.ok) {
+      throw new Error('Fehler bei der zweiten Anfrage');
+    }
+
+    const data2 = await response2.json();
+    console.log('Ergebnis der Change Detection:', data2);
+    const { image: image2, date: date2, filename: filename2 } = data2;
+
+    // Bildinhalt als Data URL setzen
+    const urlZwei = `data:image/png;base64,${image2}`;
+    changeDetectionBild.src = urlZwei;
+
+  } catch (error) {
+    console.error('Error:', error);
   }
 
-  //Schritt 5
-  if(currentTab === 4) {
+  nextPrev(1);
+  nextBtn.style.display = 'block';
+  return;
+  }
+  }
+
+  //Schritt 4
+  if(currentTab === 3) {
     popup.style.display = 'block';
-    return;
+    beendet = true;
   }
 });
 
@@ -306,11 +318,12 @@ bildTransaparenzRegler.addEventListener('change', () => {
 
 // Initialisierung der Karte
 var map = L.map('map').setView([51.505, -0.09], 13);
+
 // Hinzufügen der Tile Layer, gefunden unter https://leaflet-extras.github.io/leaflet-providers/preview/ Zugriff am 25.06.2024
 var satelliteLayer = L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoiZHdlaXNzd3d1IiwiYSI6ImNsd3oxN2g5dDAyeGwycHF1Z29mYjV5enUifQ.7PQUPuJn6Nzz_tXGsIWdUw', {
-	minZoom: 0,
-	maxZoom: 20,
-	attribution: 'Map data &copy; <a href="https://www.mapbox.com/">Mapbox</a>'
+  minZoom: 0,
+  maxZoom: 20,
+  attribution: 'Map data &copy; <a href="https://www.mapbox.com/">Mapbox</a>'
 }).addTo(map);
 
 var labelLayer = L.tileLayer('https://tiles.stadiamaps.com/tiles/stamen_toner_labels/{z}/{x}/{y}.png', {
@@ -334,9 +347,7 @@ var overlayMaps = {
 
 // Hinzufügen des Geocoders
 L.Control.geocoder().addTo(map);
-// Hinzufügen des Satellite Layers und des Label Layers
-satelliteLayer.addTo(map);
-labelLayer.addTo(map);
+
 // Hinzufügen der Layer Controls
 L.control.layers(baseMaps, overlayMaps).addTo(map);
 
@@ -429,7 +440,7 @@ function showTab(n) {
   var x = document.getElementsByClassName("tab");
   x[n].style.display = "block";
   // ... and fix the Previous/Next buttons:
-  if (n == 0) {
+  if (n == 0 || n == 3) {
     prevBtn.style.display = "none";
   } else {
     prevBtn.style.display = "inline";
@@ -437,7 +448,7 @@ function showTab(n) {
   if (n == (x.length - 1)) {
     nextBtn.innerHTML = "Teilen";
   } else {
-    nextBtn.innerHTML = "Next";
+    nextBtn.innerHTML = "Weiter";
   }
   if (n == 2) { // Annahme: Tab 3 hat den Index 2
     setTimeout(() => {
@@ -455,6 +466,7 @@ function showTab(n) {
  * @param {*} n 
  */
 function nextPrev(n) {
+  if(beendet == false) {
   // This function will figure out which tab to display
   var x = document.getElementsByClassName("tab");
   // Hide the current tab:
@@ -463,6 +475,7 @@ function nextPrev(n) {
   currentTab = currentTab + n;
   // Otherwise, display the correct tab:
   showTab(currentTab);
+  }
 }
 
 /**

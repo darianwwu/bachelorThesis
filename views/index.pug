@@ -1,108 +1,118 @@
 extends layout
 
 block content
-  h2 Erkennung manipulierter Satellitenbilder durch Vergleich mit Referenzdaten
+  h2(style='text-align: center; font-weight: bold;') Erkennung manipulierter Satellitenbilder
   // Die .tab Architektur wurde von W3Schools übernommen und angepasst. Originalquelle: W3Schools. How TO - Form with Multiple Steps. Abgerufen am 13.07.2024, von https://www.w3schools.com/howto/howto_js_form_steps.asp.
-  form#regForm(action='')
+  form#regForm(action='' style='padding: 0;')
     .tab
-      h3 1. Bild und Text einfügen
-      | Bild mit Strg+V einfügen.
-      p
-        img#socialMediaBild(style="max-width: 100%; display: block")
-      p
-        input#textInput(type='text' placeholder='Hier Text eingeben...')
+      h3 1. Bild und Text aus Social Media einfügen
+      | Fülle das Textfeld mit dem Text und füge das Bild mit Drücken von 
+      strong Strg + V
+      |  irgendwo auf der Webseite ein.
+      .image-container.text-center
+        img#socialMediaBild(style='max-width: 100%; display: block; margin: 0 auto;')
+      br
+      input#textInput(type='text' placeholder='Hier Text eingeben...')
     .tab
-      h3 2. Datum eingeben
-      | Wann wurde das Bild aufgenommen? Wenn kein Datum bekannt ist, überspringe diesen Schritt.
-      | Es ist auch möglich, nur ein Jahr (oder Monat& Jahr) anzugeben.
-      p
-        label(for="day") Tag: 
-        input#datumTag(type="number" name="day" min="1" max="31")
-        label(for="month") Monat: 
-        select#datumMonat(name="month")
-          option(value="") Wähle einen Monat
-          option(value="1") Januar
-          option(value="2") Februar
-          option(value="3") März
-          option(value="4") April
-          option(value="5") Mai
-          option(value="6") Juni
-          option(value="7") Juli
-          option(value="8") August
-          option(value="9") September
-          option(value="10") Oktober
-          option(value="11") November
-          option(value="12") Dezember
-        label(for="year") Jahr: 
-        select#datumJahr(name="year")
-          option(value="") Wähle ein Jahr
-          option(value="2024") 2024
-          option(value="2023") 2023
-          option(value="2022") 2022
-          option(value="2021") 2021
-          option(value="2020") 2020
-          option(value="2019") 2019
-          option(value="2018") 2018
-          option(value="2017") 2017
-          option(value="2016") 2016
-          option(value="2015") 2015
+      h3 2. Datum einstellen
+      p Wenn kein Aufnahmedatum bekannt ist, überspringe diesen Schritt.
+      p Es ist auch möglich, nur einen Monat oder ein Jahr anzugeben.
+      form
+        .form-row
+          .form-group.col-auto
+            label(for="datumTag") Tag: 
+            input#datumTag.form-control(type="number" name="day" min="1" max="31")
+          .form-group.col-auto
+            label(for="datumMonat") Monat: 
+            select#datumMonat.form-control(name="month")
+              option(value="") Wähle einen Monat
+              option(value="1") Januar
+              option(value="2") Februar
+              option(value="3") März
+              option(value="4") April
+              option(value="5") Mai
+              option(value="6") Juni
+              option(value="7") Juli
+              option(value="8") August
+              option(value="9") September
+              option(value="10") Oktober
+              option(value="11") November
+              option(value="12") Dezember
+          .form-group.col-auto
+            label(for="datumJahr") Jahr: 
+            select#datumJahr.form-control(name="year")
+              option(value="") Wähle ein Jahr
+              option(value="2024") 2024
+              option(value="2023") 2023
+              option(value="2022") 2022
+              option(value="2021") 2021
+              option(value="2020") 2020
+              option(value="2019") 2019
+              option(value="2018") 2018
+              option(value="2017") 2017
+              option(value="2016") 2016
+              option(value="2015") 2015
     .tab
-      h3 3. Genauen Ausschnitt auf Karte auswählen
-      | Nutze die Karte, um den genauen Ausschnitt zu bestimmen.
-      | Zeichne ein Rechteck mit folgendem Button: 
-      img(src='/ErklaerungLeafletDraw.png' alt='Leaflet Draw Button' style='width: 50px;')
-      p
-      .row
-        .col-md-6
-          .image-container
-            img#socialMediaBildCopy(style="max-width: 100%; display: block")
-            button#uebereinanderlegenButton Bild über Karte legen
-            input#transparenzRegler(type='range' min='0' max='100' value='50')
-        .col-md-6(style='position: relative;')
-          #mapUndBildOverlayContainer
-            .map-container(style = 'position: relative; z-index: 1;')
-              #map(style='width: 100%; height: 700px;')
-            .overlay-container(style = 'position: absolute; z-index: 3; top: 0; left: 0; pointer-events: none;')  
-              img#transparentesBildOverlay(style='width: 100%; opacity: 0.5; display: none;')
+      #vorabschluss
+        h3 3. Ausschnitt auf Karte auswählen
+        | Nutze die Karte, um den genauen Bildausschnitt zu bestimmen.
+        | Zeichne ein Rechteck mit folgendem Button: 
+        img(src='/ErklaerungLeafletDraw.png' alt='Leaflet Draw Button' style='width: 50px;')
+        p
+        .row
+          .col-md-6
+            .image-container
+              img#socialMediaBildCopy(style="max-width: 100%; display: block")
+              br
+              button.btn.btn-primary#uebereinanderlegenButton Bild über Karte legen
+              br
+              label.form-label(for='transparenzRegler') Transparenz einstellen
+              input#transparenzRegler.form-range(type='range' min='0' max='100'  step='5' value='50')
+          .col-md-6(style='position: relative;')
+            #mapUndBildOverlayContainer
+              .map-container(style = 'position: relative; z-index: 1;')
+                #map(style='width: 100%; height: 700px;')
+              .overlay-container(style = 'position: absolute; z-index: 3; top: 0; left: 12px; pointer-events: none;')  
+                img#transparentesBildOverlay(style='width: 100%; opacity: 0.5; display: none;')
+      #nachabschluss(style="display: none")
+        br
+        br
+        // Quelle für Spinner: https://getbootstrap.com/docs/4.4/components/spinners/ , Zugriff am 28.07.2024
+        .d-flex.justify-content-center
+          strong Bitte warten, das Bild wird analysiert... 
+          br
+          .spinner-border(role='status')
+        br
+        br
+
     .tab
       h3 4. Ergebnisse
-      | Die Ergebnisse werden hier dargestellt. Bitte warte einen Moment, während das Satellitenbild erstellt wird.
-      .row
-        .col-md-6
-          .image-container
-            img#socialMediaBildCopy2(style="max-width: 100%; display: block")
-        .col-md-6(style='position: relative;')
-          img#satellitenbildEarthEngine(alt='Satellitenbild lädt, bitte warten...' style='width: 100%;')
-          p Datum des Satellitenbildes:
-          p#satellitenbildDatum
-    .tab
-      h3 5. Ergebnisse teilen
-      p Bitte beachte, dass diese Bewertung nicht zu 100% zuverlässig sein muss.
-      | Im Zweifel stelle bitte weitere Nachforschungen an oder kontaktiere die Urheber*In des Bildes.
-      | Bei der automatisierten Analyse stellen rote Bereiche mögliche Manipulationen dar.
+      p Hier siehst du dein Bild im Vergleich mit einer vertrauenswürdigen Quelle und das Ergebnis der automatischen Analyse.
+      p Rote Bereiche im rechten Bild deuten auf mögliche Manipulationen hin.
+      p(style= 'font-size: 14px;') Bitte beachte, dass diese Bewertung keine Garantie über die Authentizität des Bildes gibt. Im Zweifel stelle bitte weitere Nachforschungen an oder kontaktiere die Urheber*In des Beitrags.
       .row
         .col-md-4
           .image-container
-            img#socialMediaBildCopy3(style="max-width: 100%; display: block")
+            img#socialMediaBildCopy2(style="max-width: 100%; display: block")
             p Originalbild
         .col-md-4(style='position: relative;')
-          img#satellitenbildEarthEngineCopy(alt='Satellitenbild' style='width: 100%;')
+          img#satellitenbildEarthEngine(alt='Satellitenbild' style='width: 100%;')
           p Vergleichsbild
           p#satellitenbildDatumCopy
         .col-md-4
-          img#changeDetectionBild(alt='Analysebild lädt, bitte warten...' style='width: 100%;')
+          img#changeDetectionBild(alt='Bild lädt, bitte warten...' style='width: 100%;')
           p Bewertung der automatisierten Analyse
     .popup(id='popup', style='display:none;')
       .popup-content
-        p Ergebnisse teilen
+        button.btn.btn-secondary#closePopup(style='float:right; margin-left: auto;' onclick="document.getElementById('popup').style.display = 'none';") X
+        strong Link zu dieser Seite
         a(href='#' id='exampleLink') www.satellitenbildtester.de/share/2gU672g3S
-        button#copyLinkButton Link kopieren
+        button.btn.btn-info#copyLinkButton(type='button') Link kopieren
     div(style='overflow:auto;')
       div(style='float:right;')
-        button#prevBtn(type='button') Zurück
-        button#nextBtn(type='button') Weiter
-    div(style='text-align:center;margin-top:40px;')
-      span.step
+        button.btn.btn-secondary#prevBtn(type='button' , style='margin-right: 5px;') Zurück
+        button.btn.btn-success#nextBtn(type='button') Weiter
+    div(style='text-align:center;margin-top:5px;')
       span.step
       span.step
       span.step
