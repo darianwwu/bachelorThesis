@@ -3,11 +3,10 @@ const bildUeberKarteButton = document.getElementById('uebereinanderlegenButton')
 const bildTransaparenzRegler = document.getElementById('transparenzRegler'); // Regler zum Einstellen der Transparenz des über die Karte gelegten Bildes
 const transparentesBildOverlay = document.getElementById('transparentesBildOverlay'); // Bild-Element zum Anzeigen des über die Karte gelegten Bildes
 const satellitenbildEarthEngine = document.getElementById('satellitenbildEarthEngine'); // Bild-Element zum Anzeigen des Satellitenbildes von Earth Engine
-const satellitenbildEarthEngineCopy = document.getElementById('satellitenbildEarthEngineCopy'); // Bild-Element zum Anzeigen des Satellitenbildes von Earth Engine
 const mapUndBildOverlayContainer = document.getElementById('mapUndBildOverlayContainer'); // Container für die Karte und das (transparente) Bild Overlay
 const textInput = document.getElementById('textInput'); // Text-Input-Feld für die Eingabe des zu analysierenden Textes eines Social Media Posts
-const satellitenbildDatum  = document.getElementById('satellitenbildDatum'); // Text-Element für das Datum des Satellitenbildes
-const satellitenbildDatumCopy  = document.getElementById('satellitenbildDatumCopy'); // Text-Element für das Datum des Satellitenbildes
+const satellitenbildDatum = document.getElementById('satellitenbildDatum'); // Text-Element für das Datum des Satellitenbildes
+const socialmediabildDatum = document.getElementById('socialmediabildDatum'); // Text-Element für das Datum des Social Media Bildes
 const datumTag = document.getElementById('datumTag'); // Text-Element für das Datum des Satellitenbildes
 const datumMonat = document.getElementById('datumMonat'); // Text-Element für das Datum des Satellitenbildes
 const datumJahr = document.getElementById('datumJahr'); // Text-Element für das Datum des Satellitenbildes
@@ -27,6 +26,11 @@ var currentTab = 0;
 var socialMediaBildEingefuegt = false;
 var eckenkoordinaten;
 var beendet = false;
+var formattedDate;
+var testDatumNeu ={tag: 5, monat: 5, jahr: 2024};
+var testTag;
+var testMonat;
+var testJahr;
 showTab(currentTab);
 
 /**
@@ -116,6 +120,10 @@ nextBtn.addEventListener('click', async () => {
     let tag = datumTag.value;
     let monat = datumMonat.value;
     let jahr = datumJahr.value;
+    //testDatumNeu = {tag: tag, monat: monat, jahr: jahr};
+    testTag = parseInt(tag);
+    testMonat = parseInt(monat);
+    testJahr = parseInt(jahr);
     datumEingabe = zeitInputsToUnix(tag, monat, jahr);
     nextPrev(1);
     return;
@@ -186,13 +194,7 @@ nextBtn.addEventListener('click', async () => {
     const timestamp = parseInt(date, 10);
     if (!isNaN(timestamp)) {
       const dateObject = new Date(timestamp);
-      const formattedDate = dateObject.toLocaleString();
-      if (satellitenbildDatum) {
-        satellitenbildDatum.textContent = formattedDate;
-        satellitenbildDatumCopy.textContent = formattedDate;
-      } else {
-        console.error('Element "satellitenbildDatum" nicht gefunden.');
-      }
+      formattedDate = dateObject.toLocaleString();
     } else {
       console.error('Ungültiger Timestamp:', date);
     }
@@ -227,6 +229,33 @@ nextBtn.addEventListener('click', async () => {
 
   nextPrev(1);
   nextBtn.style.display = 'block';
+  // Für Testzwecke wird ein Datum simuliert
+  var zahlEinsBisFuenf = Math.floor(Math.random() * 5) + 1;
+  console.log("Zahl eins bis Zehn:" + zahlEinsBisFuenf);
+  var neuerTag;
+  if(testDatumNeu.tag <= 22) {
+    neuerTag = testTag + zahlEinsBisFuenf;
+  }
+  else {
+    neuerTag = testTag;
+  }
+  
+  if(isNaN(testTag) && isNaN(testMonat) && isNaN(testJahr)) {
+    socialmediabildDatum.innerHTML = 'Aufnahmedatum: unbekannt';
+    satellitenbildDatum.innerHTML = 'Aufnahmedatum: 02.08.2024';
+  }
+  else if(isNaN(testTag) && isNaN(testMonat)) {
+    socialmediabildDatum.innerHTML = 'Aufnahmedatum: ' + testJahr.toString();
+    satellitenbildDatum.innerHTML = 'Aufnahmedatum: 02.06.' + testJahr.toString();
+  }
+  else if(isNaN(testTag)) {
+    socialmediabildDatum.innerHTML = 'Aufnahmedatum: ' + testMonat.toString() + '.' + testJahr.toString();
+    satellitenbildDatum.innerHTML = 'Aufnahmedatum: 04.' + testMonat.toString() + '.' + testJahr.toString();
+  }
+  else {
+    socialmediabildDatum.innerHTML = 'Aufnahmedatum: ' + testTag.toString() + '.' + testMonat.toString() + '.' + testJahr.toString();
+    satellitenbildDatum.innerHTML = 'Aufnahmedatum: ' + neuerTag.toString() + '.' + testMonat.toString() + '.' + testJahr.toString();
+  }
   return;
   }
   }
