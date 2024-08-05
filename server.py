@@ -7,7 +7,9 @@ import os
 import shutil
 import requests
 import zipfile
+import cv2
 import subprocess
+import numpy as np
 import time
 import spacy
 import warnings
@@ -24,7 +26,6 @@ warnings.filterwarnings("ignore")
 # Pfad zur JSON-Datei mit Key
 key_file = './credentials/ee-heinich04-805b2e12705e.json'
 scopes = ['https://www.googleapis.com/auth/earthengine']
-#api_key = 'AIzaSyB5OacCI7Nt76RIUn0qeyoGMKhFBdEWUaU'
 
 # Authentifizierung mit JWT
 credentials = Credentials.from_service_account_file(key_file, scopes=scopes)
@@ -35,7 +36,216 @@ ee.Initialize(credentials)
 # Trainiertes Modell laden
 nlp = spacy.load(r"C:\Users\User\Documents\GitHub\bachelorThesis\trainiertesmodell")
 
+# Funktion zum Registrieren von Bildern
+# Quelle: https://docs.opencv.org/4.x/dc/dc3/tutorial_py_matcher.html (abgeändert), Zugriff: 22.07.2024
+def register_images(img1, img2):
+    gray1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
+    gray2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
+    
+    sift = cv2.SIFT_create()
+    kp1, des1 = sift.detectAndCompute(gray1, None)
+    kp2, des2 = sift.detectAndCompute(gray2, None)
+    
+    bf = cv2.BFMatcher(cv2.NORM_L2, crossCheck=True)
+    matches = bf.match(des1, des2)
+    
+    # Sortiere nach Distanz und wähle mehr Übereinstimmungen aus
+    matches = sorted(matches, key=lambda x: x.distance)
+    best_matches = matches[:100]  # Erhöhe auf 100 für mehr Übereinstimmungen
+    
+    src_pts = np.float32([kp1[m.queryIdx].pt for m in best_matches]).reshape(-1, 2)
+    dst_pts = np.float32([kp2[m.trainIdx].pt for m in best_matches]).reshape(-1, 2)
+    
+    M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
+    
+    if M is None:
+        print("Homographie-Matrix konnte nicht berechnet werden.")
+    else:
+        print(f"Homographie-Matrix: {M}")
+    
+    return M
+
+
+# Funktion zum Warpen eines Bildes
+def warp_image(img, M, shape):
+    warped_img = cv2.warpPerspective(img, M, (shape[1], shape[0]))
+    return warped_img
+
+# Funktion zum Finden des überlappenden Bereichs zwischen zwei Bildern
+# Quelle: https://docs.opencv.org/4.x/d3/d05/tutorial_py_table_of_contents_contours.html (abgeändert), Zugriff: 22.07.2024
+def find_overlap_area(img1, img2):
+    overlap_mask = cv2.bitwise_and(img1, img2)
+    overlap_gray = cv2.cvtColor(overlap_mask, cv2.COLOR_BGR2GRAY)
+    _, thresh = cv2.threshold(overlap_gray, 1, 255, cv2.THRESH_BINARY)
+    
+    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    
+    if contours:
+        x, y, w, h = cv2.boundingRect(contours[0])
+        
+        # Validierung der Überlappungsgröße
+        img1_h, img1_w = img1.shape[:2]
+        img2_h, img2_w = img2.shape[:2]
+        
+        w = min(w, img1_w - x)
+        h = min(h, img1_h - y)
+        
+        # Sicherstellen, dass Überlappung nicht größer als das Bild ist
+        if x < 0 or y < 0 or w <= 0 or h <= 0:
+            return None
+        
+        return x, y, w, h
+    else:
+        return None
+
+# Funktion zum finden des überlappenden Bereichs zwischen zwei Bildern. Probiert verschiedene Verschiebungen aus
+def find_overlap_area_with_adjustments(img1, img2):
+    best_overlap = None
+    best_overlap_size = 0
+
+    for dx in range(-10, 11, 5):  # Versuche Verschiebungen in x-Richtung
+        for dy in range(-10, 11, 5):  # Versuche Verschiebungen in y-Richtung
+            img2_shifted = np.roll(img2, shift=(dy, dx), axis=(0, 1))
+            overlap_rect = find_overlap_area(img1, img2_shifted)
+            
+            if overlap_rect:
+                x, y, w, h = overlap_rect
+                overlap_size = w * h
+                if overlap_size > best_overlap_size:
+                    best_overlap = overlap_rect
+                    best_overlap_size = overlap_size
+    
+    return best_overlap
+
+# Funktion zum Löschen aller Dateien in einem Verzeichnis
+# Quelle: https://stackoverflow.com/questions/185936/how-to-delete-the-contents-of-a-folder , Zugriff: 22.07.2024
+def clear_directory(directory):
+    for filename in os.listdir(directory):
+        file_path = os.path.join(directory, filename)
+        if os.path.isfile(file_path) or os.path.islink(file_path):
+            os.unlink(file_path)
+        elif os.path.isdir(file_path):
+            shutil.rmtree(file_path)
+
+# Funktion zum Ausführen der Change Detection zwischen zwei Bildern
+def run_detect_change(first_image_path, second_image_path, output_directory):
+    # Lösche alle Dateien im Ausgabeordner
+    clear_directory(output_directory)
+    
+    # Lade die Bilder
+    img1 = cv2.imread(first_image_path)
+    img2 = cv2.imread(second_image_path)
+
+    if img1 is None or img2 is None:
+        print("Fehler beim Laden der Bilder.")
+        return None
+
+    print(f"Original Image1 size: {img1.shape}")
+    print(f"Original Image2 size: {img2.shape}")
+
+    # Vorverarbeitung der Bilder
+    # Stelle sicher, dass img1 auf img2's Größe skaliert wird, ohne negative oder Null-Dimensionen
+    target_size = (img2.shape[1], img2.shape[0])
+    img1 = cv2.resize(img1, target_size)
+    print(f"Resized Image1 size: {img1.shape}")
+
+    # Registriere die Bilder
+    M = register_images(img1, img2)
+
+    if M is None:
+        print("Homographie-Matrix konnte nicht berechnet werden.")
+        return None
+
+    print(f"Homographie-Matrix: {M}")
+
+    # Warp Image1
+    warped_img1 = warp_image(img1, M, img2.shape)
+    print(f"Warped Image1 size: {warped_img1.shape}")
+    
+    # Finde den überlappenden Bereich
+    overlap_rect = find_overlap_area_with_adjustments(warped_img1, img2)
+
+    if overlap_rect:
+        x, y, w, h = overlap_rect
+        print(f"Overlap area: x={x}, y={y}, w={w}, h={h}")
+
+        if w <= 0 or h <= 0:
+            print("Ungültiger überlappender Bereich.")
+            return None
+        
+        # Zuschnitt der Bilder
+        cropped_img1 = warped_img1[y:y+h, x:x+w]
+        cropped_img2 = img2[y:y+h, x:x+w]
+
+        if cropped_img1.size == 0 or cropped_img2.size == 0:
+            print("Fehler beim Zuschneiden der Bilder.")
+            return None
+
+        print(f"Cropped Image1 size: {cropped_img1.shape}")
+        print(f"Cropped Image2 size: {cropped_img2.shape}")
+
+        # Speichere die ausgeschnittenen Bilder temporär
+        cropped_img1_path = os.path.join(output_directory, "cropped_image1.png")
+        cropped_img2_path = os.path.join(output_directory, "cropped_image2.png")
+        cv2.imwrite(cropped_img1_path, cropped_img1)
+        cv2.imwrite(cropped_img2_path, cropped_img2)
+
+        # Führe die Change Detection mit den ausgeschnittenen Bildern durch
+        detect_change_script = "C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\Change-detection-in-multitemporal-satellite-images-master\\scripts\\DetectChange.py"
+
+        command = [
+            "python",
+            detect_change_script,
+            "-io", cropped_img1_path,
+            "-it", cropped_img2_path,
+            "-o", output_directory + "\\"
+        ]
+        
+        subprocess.run(command)
+
+        # Hier wird angenommen, dass das Skript eine Datei 'difference.jpg' im output_directory erstellt
+        processed_image_path = os.path.join(output_directory, "difference.jpg")
+
+        if not os.path.exists(processed_image_path):
+            print("Change Detection hat keine Ausgabedatei erstellt.")
+            return None
+        stretch_image(processed_image_path, processed_image_path)
+        return processed_image_path
+    else:
+        print("Kein überlappender Bereich gefunden.")
+        return None
+
+# Funktion zum Skalieren eines Bildes, um die Seitenverhältnisse beizubehalten
+def stretch_image(input_path, output_path):
+    # Öffne das Bild
+    with Image.open(input_path) as img:
+        # Hole die aktuellen Dimensionen
+        width, height = img.size
+        
+        # Erstelle ein neues Bild mit vertauschten Dimensionen
+        new_img = Image.new(img.mode, (height, width))
+        
+        # Berechne das Skalierungsverhältnis
+        scale_x = height / width
+        scale_y = width / height
+        
+        # Gehe durch jeden Pixel des neuen Bildes
+        for x in range(height):
+            for y in range(width):
+                # Berechne die entsprechende Position im Originalbild
+                orig_x = int(x / scale_x)
+                orig_y = int(y / scale_y)
+                
+                # Kopiere den Pixel
+                pixel = img.getpixel((orig_x, orig_y))
+                new_img.putpixel((x, y), pixel)
+        
+        # Speichere das neue Bild
+        new_img.save(output_path)
+
+
 # Funktion zum Geocoden von extrahierten Entitäten (Text -> Koodinaten)
+# Nutzt die Nominatim API
 def geocode_address(address):
     base_url = "https://nominatim.openstreetmap.org/search"
     params = {
@@ -51,26 +261,6 @@ def geocode_address(address):
     else:
         return {}
 
-
-def run_detect_change(first_image, second_image, output_directory):
-    # Pfad zur DetectChange.py Datei
-    detect_change_script = "C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\Change-detection-in-multitemporal-satellite-images-master\\scripts\\DetectChange.py"
-    
-    # Befehl zusammenstellen
-    command = [
-        "python",
-        detect_change_script,
-        "-io", first_image,
-        "-it", second_image,
-        "-o", output_directory
-    ]
-    
-    # Befehl ausführen
-    subprocess.run(command)
-    
-    # Hier wird angenommen, dass das Skript eine Datei 'processed_image.png' im output_directory erstellt
-    processed_image_path = os.path.join(output_directory, "difference.jpg")
-    return processed_image_path
 
 # Basis-Route
 @app.route('/')
@@ -328,7 +518,7 @@ def get_image_from_map_usa_only():
         # Die NAIP/DOQQ - Bildsammlung laden
         naipdoqq = (ee.ImageCollection("USDA/NAIP/DOQQ")
             .filterBounds(coords)
-            .filter(ee.Filter.date('2020-01-01', '2022-12-31'))
+            .filter(ee.Filter.date('2020-01-01', '2024-12-31'))
             .sort('system:index', False))
 
         # Das neueste Bild auswählen

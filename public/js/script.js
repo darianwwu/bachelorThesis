@@ -41,13 +41,11 @@ showTab(currentTab);
  * Schritt 2 (currentTab = 1): Das von den Nutzer*innen eingegebeneDatum wird in einen Unix-Zeitstempel umgewandelt 
  *                             und gespeichert.
  * Schritt 3 (currentTab = 2): Das von den Nutzer*innen auf der Karte gezeichnete Rechteck wird in Koordinaten umgewandelt,
- *                             mit denen ein Satellitenbild von EarthEngine erstellt wird.
- * Schritt 4 (currentTab = 3): Die Nutzer*innen wird auf die Ergebnisseite weitergeleitet, wo das ursprünglich von den
+ *                             mit denen ein Satellitenbild von EarthEngine erstellt wird. Die Nutzer*innen wird auf die Ergebnisseite weitergeleitet, wo das ursprünglich von den
  *                             Nutzer*innen eingefügte Bild neben dem Satellitenbild von Earth Engine angezeigt wird.
  *                             Außerdem wird das Datum des Satellitenbildes und das Ergebnis der automatischen Analyse
- *                             angezeigt.
- * Schritt 5 (currentTab = 4): Die Nutzer*innen wird auf die Teilen-Seite weitergeleitet, wo das Ergebnis übersichtlich
- *                             dargestellt wird und die Möglichkeit besteht, es über ein Popup zu teilen.               
+ *                             angezeigt.   
+ * Schritt 4 (currentTab = 3): Es wird das Popup angezeigt, in dem die Nutzer*innen den Link zum Teilen kopieren können.     
  */
 nextBtn.addEventListener('click', async () => {
   //Schritt 1
@@ -120,7 +118,6 @@ nextBtn.addEventListener('click', async () => {
     let tag = datumTag.value;
     let monat = datumMonat.value;
     let jahr = datumJahr.value;
-    //testDatumNeu = {tag: tag, monat: monat, jahr: jahr};
     testTag = parseInt(tag);
     testMonat = parseInt(monat);
     testJahr = parseInt(jahr);
@@ -158,7 +155,6 @@ nextBtn.addEventListener('click', async () => {
     const route = isWithinUSA(mapcoordinates) ? '/imagefrommapusaonly' : '/imagefrommap';
 
   try {
-    // Erste Anfrage
     const response1 = await fetch(`http://localhost:5000${route}`, {
       method: 'POST',
       headers: {
@@ -181,7 +177,6 @@ nextBtn.addEventListener('click', async () => {
     // Bildinhalt als Data URL setzen
     const url = `data:image/png;base64,${image}`;
     satellitenbildEarthEngine.src = url;
-    //satellitenbildEarthEngineCopy.src = url;
     mapUndBildOverlayContainer.style.display = 'none';
     let eckenkoordinaten = L.latLngBounds(
       L.latLng(mapcoordinates.minLat, mapcoordinates.minLng),
@@ -199,7 +194,6 @@ nextBtn.addEventListener('click', async () => {
       console.error('Ungültiger Timestamp:', date);
     }
 
-    // Zweite Anfrage
     const response2 = await fetch('http://localhost:5000/detectchange', {
       method: 'POST',
       headers: {
@@ -242,7 +236,7 @@ nextBtn.addEventListener('click', async () => {
   
   if(isNaN(testTag) && isNaN(testMonat) && isNaN(testJahr)) {
     socialmediabildDatum.innerHTML = 'Aufnahmedatum: unbekannt';
-    satellitenbildDatum.innerHTML = 'Aufnahmedatum: 02.08.2024';
+    satellitenbildDatum.innerHTML = 'Aufnahmedatum: 31.07.2024';
   }
   else if(isNaN(testTag) && isNaN(testMonat)) {
     socialmediabildDatum.innerHTML = 'Aufnahmedatum: ' + testJahr.toString();
@@ -292,12 +286,14 @@ copyLinkButton.addEventListener('click', () => {
 document.addEventListener('visibilitychange', function() {
   if (!document.hidden && currentTab === 2) {
     map.invalidateSize();
-    map.setView([coordinates.lat, coordinates.lng], 13);
+    map.setView([coordinates.lat, coordinates.lng], 15);
   }
 });
 
 /**
- * Event-Listener, der das in der Zwischenablage befindliche Bild auf der Webseite anzeigt, wenn ein Bild aus der Zwischenablage mittels Strg+V auf die Seite kopiert wird.
+ * Event-Listener, der das in der Zwischenablage befindliche Bild auf der Webseite anzeigt,
+ * wenn ein Bild aus der Zwischenablage mittels Strg+V auf die Seite kopiert wird.
+ * Quelle: https://stackoverflow.com/questions/52597158/ctrl-v-insert-images-and-post (Code abgeändert) , Zugriff am 13.07.2024
  */
 document.addEventListener('paste', (event) => {
   const items = event.clipboardData.items;
@@ -482,7 +478,7 @@ function showTab(n) {
   if (n == 2) { // Annahme: Tab 3 hat den Index 2
     setTimeout(() => {
       map.invalidateSize();
-      map.setView([coordinates.lat, coordinates.lng], 13);
+      map.setView([coordinates.lat, coordinates.lng], 15);
     }, 100);
   }
   // ... and run a function that displays the correct step indicator:
