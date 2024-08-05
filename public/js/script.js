@@ -96,15 +96,23 @@ nextBtn.addEventListener('click', async () => {
         }),
       });
     })
-    .then(response => response.json())
+    .then(response => {
+      if (!response.ok) {
+          throw new Error('Network response was not ok ' + response.statusText);
+      }
+      return response.json();
+     })
     .then(data => {
-      coordinates = { lat: parseFloat(data.coords.lat), lng: parseFloat(data.coords.lon) };
-      console.log('Vom Geocoding gefundene Koordinaten:', coordinates);
-      // Zoomen auf die gefundenen Koordinaten
-      eckenkoordinaten = L.latLngBounds(L.latLng(coordinates.lat, coordinates.lng), L.latLng(coordinates.lat, coordinates.lng));
-      
-    })
-    .catch((error) => {
+      if (data.coords && data.coords.lat !== undefined && data.coords.lon !== undefined) {
+          coordinates = { lat: parseFloat(data.coords.lat), lng: parseFloat(data.coords.lon) };
+          console.log('Vom Geocoding gefundene Koordinaten:', coordinates);
+          // Zoomen auf die gefundenen Koordinaten
+          eckenkoordinaten = L.latLngBounds(L.latLng(coordinates.lat, coordinates.lng), L.latLng(coordinates.lat, coordinates.lng));
+      } else {
+          console.log('Keine Koordinaten gefunden.');
+      }
+  })
+  .catch((error) => {
       console.error('Error:', error);
     });
 
@@ -133,7 +141,7 @@ nextBtn.addEventListener('click', async () => {
       return;
     }
     else {
-    map.fitBounds(eckenkoordinaten);
+    //map.fitBounds(eckenkoordinaten);
     let zeit = datumEingabe;
     // DOM-Elemente verstecken und Ladescreen anzeigen
     document.getElementById('vorabschluss').style.display = 'none';
