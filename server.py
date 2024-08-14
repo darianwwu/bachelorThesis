@@ -24,7 +24,7 @@ CORS(app)
 warnings.filterwarnings("ignore")
 
 # Pfad zur JSON-Datei mit Key
-key_file = './credentials/ee-heinich04-805b2e12705e.json'
+key_file = './credentials/ee-heinich04-1b69aee5f34b.json'
 scopes = ['https://www.googleapis.com/auth/earthengine']
 
 # Authentifizierung mit JWT
