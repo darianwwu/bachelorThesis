@@ -20,4 +20,27 @@ In Konsolenfenster 2 muss dann folgender Code eingegeben werden:
 ## Anleitung zur Nutzung der Anwendung
 Nach erfolgreichem Start des Frontends und Backends in der Programmierumgebung ist das Webinterface im Browser unter der Domain **http://localhost:3000/** erreichbar.
 
+### Schritt 1
+Hier wird das Bild und der Text des Social Media Posts eingefügt.
 ![Startseite](readMeImages/1.png)
+
+So sieht die Seite nach dem Einfügen aus:
+![Startseite](readMeImages/2.png)
+
+### Schritt 2
+Hier wird das Aufnahmedatum eingegeben
+![Startseite](readMeImages/4.png)
+
+### Schritt 3
+Hier wird der Kartenausschnitt gewählt, um das Social Media Bild zu reproduzieren
+![Startseite](readMeImages/5.png)
+
+Es ist möglich, das Bild als transparentes Overlay über die Karte zu legen
+![Startseite](readMeImages/6.png)
+
+Mithilfe des Leaflet Draw-Plugins wird ein Bereich gezeichnet
+![Startseite](readMeImages/7.png)
+
+### Schritt 4
+Auf der Ergebnisseite werden die Ergebnisse angezeigt
+![Startseite](readMeImages/8.png)
