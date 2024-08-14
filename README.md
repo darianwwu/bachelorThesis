@@ -6,7 +6,7 @@ Dieses Repository enthält den Code der im Rahmen meiner Bachelorarbeit an der [
 In den letzten Jahren haben sich die Möglichkeiten zur künstlichen Erstellung oder Manipulation von Bildern durch Fortschritte in Künstlicher Intelligenz (KI), Machine Learning und Computer Vision rasant weiterentwickelt. Vor diesem Hintergrund beschreibt diese Bachelorarbeit die Entwicklung einer Anwendung zur semi-automatischen Erkennung von gefälschten Satellitenbildern in sozialen Medien. Die Anwendung übernimmt die zeitaufwändigen Aufgaben des Text-Extrahierens, Lokalisierens und Vergleichens und ermöglicht es, die Ergebnisse einfach zu teilen. Durch die Kombination von Bildmanipulationstechniken, überwachtem maschinellen Lernen und Geocoding wird das Problem der Desinformation in sozialen Medien adressiert und ein Werkzeug zur Bekämpfung dieser geschaffen.
 
 ## Voraussetzungen
-Google Earth Engine Account
+Google Earth Engine Account  
 Im Code sind viele absolute Pfade gesetzt, die angepasst werden müssen, wenn der Code auf einem anderen Gerät ausgeführt wird.
 
 ## Anleitung zum Starten der Anwendung
