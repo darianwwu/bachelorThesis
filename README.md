@@ -20,4 +20,4 @@ In Konsolenfenster 2 muss dann folgender Code eingegeben werden:
 ## Anleitung zur Nutzung der Anwendung
 Nach erfolgreichem Start des Frontends und Backends in der Programmierumgebung ist das Webinterface im Browser unter der Domain **http://localhost:3000/** erreichbar.
 
-
+![Startseite](readMeImages/1.png)
