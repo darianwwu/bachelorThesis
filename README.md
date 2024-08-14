@@ -21,31 +21,38 @@ Nach erfolgreichem Start des Frontends und Backends in der Programmierumgebung i
 
 ### Schritt 1
 Hier wird das Bild und der Text des Social Media Posts eingefügt.
+<br>
 ![Startseite](readMeImages/1.png)
 <br>
 <br>
 So sieht die Seite nach dem Einfügen aus:
+<br>
 ![Startseite](readMeImages/2.png)
 <br>
 <br>
 ### Schritt 2
 Hier wird das Aufnahmedatum eingegeben
+<br>
 ![Startseite](readMeImages/4.png)
 <br>
 <br>
 ### Schritt 3
 Hier wird der Kartenausschnitt gewählt, um das Social Media Bild zu reproduzieren
+<br>
 ![Startseite](readMeImages/5.png)
 <br>
 <br>
 Es ist möglich, das Bild als transparentes Overlay über die Karte zu legen
+<br>
 ![Startseite](readMeImages/6.png)
 <br>
 <br>
 Mithilfe des Leaflet Draw-Plugins wird ein Bereich gezeichnet
+<br>
 ![Startseite](readMeImages/7.png)
 <br>
 <br>
 ### Schritt 4
 Auf der Ergebnisseite werden die Ergebnisse angezeigt
+<br>
 ![Startseite](readMeImages/8.png)
