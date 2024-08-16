@@ -34,7 +34,7 @@ credentials = Credentials.from_service_account_file(key_file, scopes=scopes)
 ee.Initialize(credentials)
 
 # Trainiertes Modell laden
-nlp = spacy.load(r"C:\Users\User\Documents\GitHub\bachelorThesis\trainiertesmodell")
+nlp = spacy.load("trainiertesmodell")
 
 # Funktion zum Registrieren von Bildern
 # Quelle: https://docs.opencv.org/4.x/dc/dc3/tutorial_py_matcher.html (abgeändert), Zugriff: 22.07.2024
@@ -122,6 +122,9 @@ def find_overlap_area_with_adjustments(img1, img2):
 def clear_directory(directory):
     for filename in os.listdir(directory):
         file_path = os.path.join(directory, filename)
+        # .gitignoe ignorieren
+        if filename == '.gitignore':
+            continue
         if os.path.isfile(file_path) or os.path.islink(file_path):
             os.unlink(file_path)
         elif os.path.isdir(file_path):
@@ -191,7 +194,7 @@ def run_detect_change(first_image_path, second_image_path, output_directory):
         cv2.imwrite(cropped_img2_path, cropped_img2)
 
         # Führe die Change Detection mit den ausgeschnittenen Bildern durch
-        detect_change_script = "C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\Change-detection-in-multitemporal-satellite-images-master\\scripts\\DetectChange.py"
+        detect_change_script = r"Change-detection-in-multitemporal-satellite-images-master\scripts\DetectChange.py"
 
         command = [
             "python",
@@ -303,9 +306,9 @@ def detect_change():
 
         # Antwort (Beispiel)
         output_file_new = run_detect_change(
-            "C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\social_media_bild.png",
-            "C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\satellitenbild.png",
-            "C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\change\\"
+            "social_media_bild.png",
+            "satellitenbild.png",
+            r"public\change"
         )
 
         # Bildinhalt als Base64-kodierten String lesen
@@ -404,7 +407,7 @@ def get_image_from_map():
 
         # Die TIF-Dateien durchlaufen und verschieben
         tif_files = []
-        tifs_directory = 'C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs'
+        tifs_directory = r"public\tifs"
 
         if not os.path.exists(tifs_directory):
             os.makedirs(tifs_directory)
@@ -416,14 +419,18 @@ def get_image_from_map():
                 new_file_name = f"{band_name}.tif"
                 new_path = os.path.join(tifs_directory, new_file_name)
                 shutil.move(current_path, new_path)
-
+        #
+        #
+        # Hier müssen die absoluten Pfade angepasst werden
+        #
+        #
         # Die TIF-Dateien zu einer einzigen Datei zusammenführen
         python_exe = 'C:\\Users\\User\\anaconda3\\python.exe'
         gdal_merge = 'C:\\Users\\User\\anaconda3\\Scripts\\gdal_merge.py'
-        output_file = 'C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\merged.tif'
-        tif_files = ['C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\B4.tif', 
-                    'C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\B3.tif', 
-                    'C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\B2.tif']
+        output_file = r"public\tifs\merged.tif"
+        tif_files = [r"public\tifs\B4.tif", 
+                    r"public\tifs\B3.tif", 
+                    r"public\tifs\B2.tif"]
 
         command = [python_exe, gdal_merge, '-init', '255', '-o', output_file, '-separate'] + tif_files
 
@@ -442,14 +449,18 @@ def get_image_from_map():
         while not os.path.isfile(output_file) or old_file_size != os.path.getsize(output_file):
             print("Warten auf die Erstellung der Datei...")
             old_file_size = os.path.getsize(output_file) if os.path.isfile(output_file) else 0
-            time.sleep(1)  # Warten Sie 1 Sekunde zwischen den Überprüfungen
-
+            time.sleep(1)  # 1 Sekunde warten zwischen den Überprüfungen
+        #
+        #
+        # Hier muss der absolute Pfad angepasst werden
+        #
+        #
         # Das TIF in PNG umwandeln mithilfe von gdal_translate
         gdal_translate = 'C:\\Program Files\\GDAL\\gdal_translate.exe'
-        input_file_new = 'C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\merged.tif'
+        input_file_new = r"public\tifs\merged.tif"
 
         # Basis-Output-Dateiname
-        output_file_base = 'C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\mergedtif'
+        output_file_base = r"public\tifs\mergedtif"
 
         # Den Unix-Timestamp hinzufügen
         timestamp = str(date)
@@ -482,10 +493,10 @@ def get_image_from_map():
 
         # Nicht mehr benötigte Dateien löschen
         os.remove(zip_file_name)
-        os.remove('C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\B4.tif')
-        os.remove('C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\B3.tif')
-        os.remove('C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\B2.tif')
-        os.remove('C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\merged.tif')
+        os.remove(r"public\tifs\B4.tif")
+        os.remove(r"public\tifs\B3.tif")
+        os.remove(r"public\tifs\B2.tif")
+        os.remove(r"public\tifs\merged.tif")
 
         # Bildinhalt als Base64-kodierten String lesen
         with open(output_file_new, 'rb') as image_file:
@@ -555,7 +566,7 @@ def get_image_from_map_usa_only():
 
         # Die TIF-Dateien durchlaufen und verschieben
         tif_files = []
-        tifs_directory = 'C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs'
+        tifs_directory = r"public\tifs"
 
         if not os.path.exists(tifs_directory):
             os.makedirs(tifs_directory)
@@ -567,14 +578,18 @@ def get_image_from_map_usa_only():
                 new_file_name = f"{band_name}.tif"
                 new_path = os.path.join(tifs_directory, new_file_name)
                 shutil.move(current_path, new_path)
-
+        #
+        #
+        # Hier müssen die absoluten Pfade angepasst werden
+        #
+        #
         # Die TIF-Dateien zu einer einzigen Datei zusammenführen
         python_exe = 'C:\\Users\\User\\anaconda3\\python.exe'
         gdal_merge = 'C:\\Users\\User\\anaconda3\\Scripts\\gdal_merge.py'
-        output_file = 'C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\merged.tif'
-        tif_files = ['C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\R.tif', 
-                    'C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\G.tif', 
-                    'C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\B.tif']
+        output_file = r"public\tifs\merged.tif"
+        tif_files = [r"public\tifs\R.tif", 
+                    r"public\tifs\G.tif", 
+                    r"public\tifs\B.tif"]
 
         command = [python_exe, gdal_merge, '-init', '255', '-o', output_file, '-separate'] + tif_files
 
@@ -597,10 +612,10 @@ def get_image_from_map_usa_only():
 
         # Das TIF in PNG umwandeln mithilfe von gdal_translate
         gdal_translate = 'C:\\Program Files\\GDAL\\gdal_translate.exe'
-        input_file_new = 'C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\merged.tif'
+        input_file_new = r"public\tifs\merged.tif"
 
         # Basis-Output-Dateiname
-        output_file_base = 'C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\mergedtif'
+        output_file_base = r"public\tifs\mergedtif"
 
         # Den Unix-Timestamp hinzufügen
         timestamp = str(date)
@@ -633,10 +648,10 @@ def get_image_from_map_usa_only():
 
         # Nicht mehr benötigte Dateien löschen
         os.remove(zip_file_name)
-        os.remove('C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\R.tif')
-        os.remove('C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\G.tif')
-        os.remove('C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\B.tif')
-        os.remove('C:\\Users\\User\\Documents\\GitHub\\bachelorThesis\\public\\tifs\\merged.tif')
+        os.remove(r"public\tifs\R.tif")
+        os.remove(r"public\tifs\G.tif")
+        os.remove(r"public\tifs\B.tif")
+        os.remove(r"public\tifs\merged.tif")
 
         # Bildinhalt als Base64-kodierten String lesen
         with open(output_file_new, 'rb') as image_file:
