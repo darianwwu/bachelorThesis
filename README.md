@@ -2,11 +2,13 @@
 English title: _Semi-automatic detection of manipulated satellite imagery in social media by comparison with reference data_
 
 Dieses Repository enthält den Code der im Rahmen meiner Bachelorarbeit an der [Universität Münster](https://www.uni-muenster.de/Geoinformatics/) entwickelten Anwendung.
+
 ## Zusammenfassung
 In den letzten Jahren haben sich die Möglichkeiten zur künstlichen Erstellung oder Manipulation von Bildern durch Fortschritte in Künstlicher Intelligenz (KI), Machine Learning und Computer Vision rasant weiterentwickelt. Vor diesem Hintergrund beschreibt diese Bachelorarbeit die Entwicklung einer Anwendung zur semi-automatischen Erkennung von gefälschten Satellitenbildern in sozialen Medien. Die Anwendung übernimmt die zeitaufwändigen Aufgaben des Text-Extrahierens, Lokalisierens und Vergleichens und ermöglicht es, die Ergebnisse einfach zu teilen. Durch die Kombination von Bildmanipulationstechniken, überwachtem maschinellen Lernen und Geocoding wird das Problem der Desinformation in sozialen Medien adressiert und ein Werkzeug zur Bekämpfung dieser geschaffen.
 
 ## Voraussetzungen
 Es muss zusätzliche Software auf dem Gerät vorhanden sein und in der Datei server.py müssen einige Änderungen vorgenommen werden.  
+
 **Google Earth Engine Account**  
 Es muss ein Google Earth Engine Account erstellt und ein Authentifizierungs-JSON-Key generiert werden. Dieser ist im Verzeichnis zu hinterlegen. [Anleitung](https://developers.google.com/earth-engine/guides/app_key)  
 
