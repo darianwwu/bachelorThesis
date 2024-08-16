@@ -23,16 +23,16 @@ Innerhalb der Anaconda-Umgebung muss dann das GDAL-Paket installiert werden:
 
 **Anpassen der Pfade**  
 In der Datei server.py müssen danach einige Änderungen vorgenommen werden:  
-Einfügen des Pfades zum Earth Engine Key:  
+Anpassen des Pfades zum Earth Engine Key:  
 31 ```key_file = [Hier Pfad einfügen]```  
 
-Einfügen der Pfade zur Anaconda-Installation mit aktivierter GDAL-Bibliothek:  
+Anpassen der Pfade zur Anaconda-Installation mit aktivierter GDAL-Bibliothek:  
 432 ```python_exe = 'C:\\Users\\User\\anaconda3\\python.exe'```  
 433 ```gdal_merge = 'C:\\Users\\User\\anaconda3\\Scripts\\gdal_merge.py'```  
 591 ```python_exe = 'C:\\Users\\User\\anaconda3\\python.exe'```  
 592 ```gdal_merge = 'C:\\Users\\User\\anaconda3\\Scripts\\gdal_merge.py'```  
 
-Einfügen der Pfade zum GDAL-File gdal_translate.exe  
+Anpassen der Pfade zum GDAL-File gdal_translate.exe  
 463 ```gdal_translate = 'C:\\Program Files\\GDAL\\gdal_translate.exe'```  
 618 ```gdal_translate = 'C:\\Program Files\\GDAL\\gdal_translate.exe'```  
             
