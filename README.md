@@ -8,7 +8,7 @@ In den letzten Jahren haben sich die Möglichkeiten zur künstlichen Erstellung 
 ## Voraussetzungen
 Es muss zusätzliche Software auf dem Gerät vorhanden sein und in der Datei server.py müssen einige Änderungen vorgenommen werden.  
 **Google Earth Engine Account**  
-Es muss ein Google Earth Engine Account erstellt und ein JSON-Key generiert werden. Dieser ist im Verzeichnis zu hinterlegen. [Anleitung (https://developers.google.com/earth-engine/guides/app_key)
+Es muss ein Google Earth Engine Account erstellt und ein Authentifizierungs-JSON-Key generiert werden. Dieser ist im Verzeichnis zu hinterlegen. [Anleitung](https://developers.google.com/earth-engine/guides/app_key)
 
 
 **Anaconda und GDAL-Bibliothek**
