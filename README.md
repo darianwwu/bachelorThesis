@@ -8,18 +8,18 @@ In den letzten Jahren haben sich die Möglichkeiten zur künstlichen Erstellung 
 ## Voraussetzungen
 Es muss zusätzliche Software auf dem Gerät vorhanden sein und in der Datei server.py müssen einige Änderungen vorgenommen werden.  
 **Google Earth Engine Account**  
-Es muss ein Google Earth Engine Account erstellt und ein Authentifizierungs-JSON-Key generiert werden. Dieser ist im Verzeichnis zu hinterlegen. [Anleitung](https://developers.google.com/earth-engine/guides/app_key)
+Es muss ein Google Earth Engine Account erstellt und ein Authentifizierungs-JSON-Key generiert werden. Dieser ist im Verzeichnis zu hinterlegen. [Anleitung](https://developers.google.com/earth-engine/guides/app_key)  
 
 
-**Anaconda und GDAL-Bibliothek**
+**Anaconda und GDAL-Bibliothek**  
 Für das Programm wird eine anaconda3-Installation benötigt. [Download](https://www.anaconda.com/download)  
 Es wird ebenfalls eine Installation der GDAL-Bibliothek benötigt. [Download](https://gdal.org/download.html)  
 
 Innerhalb der Anaconda-Umgebung muss dann das GDAL-Paket installiert werden:  
-```conda install -c conda-forge gdal```
+```conda install -c conda-forge gdal```  
 
 
-**Anpassen der Pfade**
+**Anpassen der Pfade**  
 In der Datei server.py müssen danach einige Änderungen vorgenommen werden:  
 Einfügen des Pfades zum Earth Engine Key:  
 31 ```key_file = [Hier Pfad einfügen]```  
