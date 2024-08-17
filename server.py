@@ -22,7 +22,11 @@ app = Flask(__name__)
 CORS(app)
 
 warnings.filterwarnings("ignore")
-
+#
+#
+# Hier muss der Pfad zur JSON-Datei mit dem Key angepasst werden
+#
+#
 # Pfad zur JSON-Datei mit Key
 key_file = './credentials/ee-heinich04-1b69aee5f34b.json'
 scopes = ['https://www.googleapis.com/auth/earthengine']
