@@ -38,8 +38,12 @@ Anpassen der Pfade zum GDAL-File gdal_translate.exe
             
 
 ## Anleitung zum Starten der Anwendung
-Um alle notwendigen npm-Packages zu installieren, muss in der Programmierumgebung ein neues Konsolenfenster geöffnet und folgender Code eingegeben werden:  
-```npm install```
+Um alle notwendigen npm-Module zu installieren, muss in der Programmierumgebung ein neues Konsolenfenster geöffnet und folgender Code eingegeben werden:  
+```npm install```  
+
+Um alle notwendigen pip-Module zu installieren, muss in einem Konsolenfenster folgender Code eingegeben werden:  
+```pip install -r requirements.txt```  
+
 
 Nach erfolgreicher Installation muss ein zweites Konsolenfenster geöffnet werden, um das Frontend und das Backend separat zu starten  
 In Konsolenfenster 1 muss dann folgender Code eingegeben werden:  
